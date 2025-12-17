@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Set Calc">
+  <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)">
+  <title>Set Calculator</title>
+  <link rel="manifest" href="data:application/json,{%22name%22:%22Set%20Calculator%22,%22short_name%22:%22Set%20Calc%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%231a1a1a%22,%22theme_color%22:%22%231a1a1a%22}">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+```
+:root {
+  --bg-page: #1a1a1a;
+  --bg-section: #2a2a2a;
+  --bg-input: #333;
+  --border-input: #444;
+  --border-focus: #007aff;
+  --border-invalid: #ff453a;
+  --bg-invalid: #3a2a2a;
+  --text-primary: #f0f0f0;
+  --text-secondary: #999;
+  --text-label: #888;
+  --text-error: #ff453a;
+  --toggle-bg: #333;
+  --toggle-active-bg: #444;
+  --shadow: rgba(0,0,0,0.3);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-page: #f5f5f5;
+    --bg-section: white;
+    --bg-input: white;
+    --border-input: #ddd;
+    --border-focus: #007aff;
+    --border-invalid: #ff3b30;
+    --bg-invalid: #fff5f5;
+    --text-primary: #333;
+    --text-secondary: #666;
+    --text-label: #888;
+    --text-error: #ff3b30;
+    --toggle-bg: #f0f0f0;
+    --toggle-active-bg: white;
+    --shadow: rgba(0,0,0,0.1);
+  }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-weight: 600;
+}
+
+.section {
+  background: var(--bg-section);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.input-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.input-row:last-child {
+  margin-bottom: 0;
+}
+
+.input-group {
+  flex: 1;
+}
+
+.input-group label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-label);
+  margin-bottom: 4px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  font-size: 16px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+.input-group input.invalid {
+  border-color: var(--border-invalid);
+  background-color: var(--bg-invalid);
+}
+
+.input-group input.invalid:focus {
+  border-color: var(--border-invalid);
+}
+
+.error-message {
+  color: var(--text-error);
+  font-size: 11px;
+  margin-top: 4px;
+  min-height: 16px;
+}
+
+.toggle-group {
+  display: flex;
+  background: var(--toggle-bg);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+
+.toggle-btn.active {
+  background: var(--toggle-active-bg);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+.output-section {
+  background: linear-gradient(135deg, #007aff, #5856d6);
+  color: white;
+}
+
+.output-section .section-title {
+  color: rgba(255,255,255,0.8);
+}
+
+.output-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.output-row:last-child {
+  border-bottom: none;
+}
+
+.output-label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.output-value {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.hidden {
+  display: none;
+}
+```
+
+  </style>
+</head>
+<body>
+  <h1>Set Calculator</h1>
+
+  <div class="section">
+    <div class="section-title">Reference Set</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Reps</label>
+        <input type="number" id="refReps" min="1" max="50" value="5">
+        <div class="error-message" id="refRepsError"></div>
+      </div>
+      <div class="input-group">
+        <label>Weight</label>
+        <input type="number" id="refWeight" min="0" step="0.5" value="100">
+        <div class="error-message" id="refWeightError"></div>
+      </div>
+      <div class="input-group">
+        <label>RPE</label>
+        <input type="number" id="refRPE" min="5" max="10" step="0.5" value="8">
+        <div class="error-message" id="refRPEError"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Target Set</div>
+    <div class="toggle-group">
+      <button class="toggle-btn active" id="toggleWeight" onclick="setMode('weight')">Calculate Weight</button>
+      <button class="toggle-btn" id="toggleReps" onclick="setMode('reps')">Calculate Reps</button>
+    </div>
+    <div class="input-row">
+      <div class="input-group" id="targetRepsGroup">
+        <label>Target Reps</label>
+        <input type="number" id="targetReps" min="1" max="50" value="8">
+        <div class="error-message" id="targetRepsError"></div>
+      </div>
+      <div class="input-group hidden" id="targetWeightGroup">
+        <label>Target Weight</label>
+        <input type="number" id="targetWeight" min="0" step="0.5" value="90">
+        <div class="error-message" id="targetWeightError"></div>
+      </div>
+      <div class="input-group">
+        <label>Target RPE</label>
+        <input type="number" id="targetRPE" min="5" max="10" step="0.5" value="8">
+        <div class="error-message" id="targetRPEError"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section output-section">
+    <div class="section-title">Output</div>
+    <div class="output-row">
+      <span class="output-label">Reps</span>
+      <span class="output-value" id="outputReps">—</span>
+    </div>
+    <div class="output-row">
+      <span class="output-label">Weight</span>
+      <span class="output-value" id="outputWeight">—</span>
+    </div>
+    <div class="output-row">
+      <span class="output-label">RPE</span>
+      <span class="output-value" id="outputRPE">—</span>
+    </div>
+  </div>
+
+  <script>
+    let mode = 'weight'; // 'weight' = calculate weight (user inputs reps), 'reps' = calculate reps (user inputs weight)
+
+    function setMode(newMode) {
+      mode = newMode;
+      document.getElementById('toggleWeight').classList.toggle('active', mode === 'weight');
+      document.getElementById('toggleReps').classList.toggle('active', mode === 'reps');
+      // Show reps input when calculating weight, show weight input when calculating reps
+      document.getElementById('targetRepsGroup').classList.toggle('hidden', mode === 'reps');
+      document.getElementById('targetWeightGroup').classList.toggle('hidden', mode === 'weight');
+      clearValidation('targetReps');
+      clearValidation('targetWeight');
+      calculate();
+    }
+
+    // Validation helpers
+    function setInvalid(inputId, message) {
+      document.getElementById(inputId).classList.add('invalid');
+      document.getElementById(inputId + 'Error').textContent = message;
+    }
+
+    function setEmpty(inputId) {
+      document.getElementById(inputId).classList.add('invalid');
+      document.getElementById(inputId + 'Error').textContent = '';
+    }
+
+    function clearValidation(inputId) {
+      document.getElementById(inputId).classList.remove('invalid');
+      document.getElementById(inputId + 'Error').textContent = '';
+    }
+
+    function validateReps(inputId) {
+      const input = document.getElementById(inputId);
+      if (input.value === '') {
+        setEmpty(inputId);
+        return null;
+      }
+      const value = parseFloat(input.value);
+      if (isNaN(value) || value <= 0) {
+        setInvalid(inputId, 'Reps must be positive');
+        return null;
+      }
+      if (value > 50) {
+        setInvalid(inputId, 'Reps must be ≤ 50');
+        return null;
+      }
+      clearValidation(inputId);
+      return value;
+    }
+
+    function validateWeight(inputId) {
+      const input = document.getElementById(inputId);
+      if (input.value === '') {
+        setEmpty(inputId);
+        return null;
+      }
+      const value = parseFloat(input.value);
+      if (isNaN(value) || value <= 0) {
+        setInvalid(inputId, 'Weight must be positive');
+        return null;
+      }
+      clearValidation(inputId);
+      return value;
+    }
+
+    function validateRPE(inputId) {
+      const input = document.getElementById(inputId);
+      if (input.value === '') {
+        setEmpty(inputId);
+        return null;
+      }
+      const value = parseFloat(input.value);
+      if (isNaN(value) || value <= 0) {
+        setInvalid(inputId, 'RPE must be positive');
+        return null;
+      }
+      if (value > 10) {
+        setInvalid(inputId, 'RPE must be ≤ 10');
+        return null;
+      }
+      clearValidation(inputId);
+      return value;
+    }
+
+    function clearOutputs() {
+      document.getElementById('outputReps').textContent = '—';
+      document.getElementById('outputWeight').textContent = '—';
+      document.getElementById('outputRPE').textContent = '—';
+    }
+
+    // Berger equation: pct = 100 * exp(0.0262 * (reps - 1))
+    // pct acts as a multiplier: 100 at 1 rep, increases with more reps
+    function getPct(reps, rpe) {
+      const repsInReserve = 10 - rpe;
+      const effectiveReps = reps + repsInReserve;
+      return 100 * Math.exp(0.0262 * (effectiveReps - 1));
+    }
+
+    // Inverse: reps = 1 + ln(pct / 100) / 0.0262
+    function getRepsFromPct(pct, rpe) {
+      const repsInReserve = 10 - rpe;
+      const effectiveReps = 1 + Math.log(pct / 100) / 0.0262;
+      return Math.max(1, effectiveReps - repsInReserve);
+    }
+
+    function calculate() {
+      // Validate all inputs
+      const refReps = validateReps('refReps');
+      const refWeight = validateWeight('refWeight');
+      const refRPE = validateRPE('refRPE');
+      const targetRPE = validateRPE('targetRPE');
+
+      let targetReps = null;
+      let targetWeight = null;
+
+      if (mode === 'weight') {
+        // Calculating weight, user provides reps
+        targetReps = validateReps('targetReps');
+        clearValidation('targetWeight');
+      } else {
+        // Calculating reps, user provides weight
+        targetWeight = validateWeight('targetWeight');
+        clearValidation('targetReps');
+      }
+
+      // Check if any required validation failed
+      if (refReps === null || refWeight === null || refRPE === null || targetRPE === null) {
+        clearOutputs();
+        return;
+      }
+
+      if (mode === 'weight' && targetReps === null) {
+        clearOutputs();
+        return;
+      }
+
+      if (mode === 'reps' && targetWeight === null) {
+        clearOutputs();
+        return;
+      }
+
+      // Calculate estimated 1RM from reference set
+      // e1RM = weight * pct / 100 (pct scales up to 1RM)
+      const refPct = getPct(refReps, refRPE);
+      const e1RM = refWeight * refPct / 100;
+
+      let outputReps, outputWeight;
+
+      if (mode === 'weight') {
+        // User provides target reps, calculate weight
+        const targetPct = getPct(targetReps, targetRPE);
+        outputWeight = e1RM * 100 / targetPct;
+        outputReps = targetReps;
+      } else {
+        // User provides target weight, calculate reps
+        const targetPct = e1RM * 100 / targetWeight;
+        outputReps = getRepsFromPct(targetPct, targetRPE);
+        outputWeight = targetWeight;
+      }
+
+      document.getElementById('outputReps').textContent = Math.round(outputReps * 10) / 10;
+      document.getElementById('outputWeight').textContent = Math.round(outputWeight * 10) / 10;
+      document.getElementById('outputRPE').textContent = targetRPE;
+    }
+
+    // Add event listeners to all inputs
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('input', calculate);
+    });
+
+    // Initial calculation
+    calculate();
+
+    // Register service worker for offline support (PWA)
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        const CACHE_NAME = 'set-calc-v1';
+        self.addEventListener('install', e => {
+          e.waitUntil(
+            caches.open(CACHE_NAME).then(cache => 
+              cache.add(new Request(self.registration.scope, {cache: 'reload'}))
+            )
+          );
+          self.skipWaiting();
+        });
+        self.addEventListener('activate', e => {
+          e.waitUntil(
+            caches.keys().then(keys => 
+              Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+            )
+          );
+          self.clients.claim();
+        });
+        self.addEventListener('fetch', e => {
+          e.respondWith(
+            caches.match(e.request).then(r => r || fetch(e.request))
+          );
+        });
+      `;
+      const blob = new Blob([swCode], {type: 'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    }
+  </script>
+
+</body>
+</html>
