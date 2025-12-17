@@ -442,7 +442,7 @@ h1 {
     // Register service worker for offline support (PWA)
     if ('serviceWorker' in navigator) {
       const swCode = `
-        const CACHE_NAME = 'set-calc-v1';
+        const CACHE_NAME = 'setcalc-v1';
         self.addEventListener('install', e => {
           e.waitUntil(
             caches.open(CACHE_NAME).then(cache => 
