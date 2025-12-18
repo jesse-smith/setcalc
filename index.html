@@ -177,6 +177,9 @@ h1 {
   position: relative;
   z-index: 1;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
 }
 
 .toggle-btn:active {
@@ -184,6 +187,10 @@ h1 {
 }
 
 .toggle-btn:focus {
+  outline: none;
+}
+
+.toggle-btn:focus-visible {
   outline: none;
 }
 
