@@ -476,6 +476,15 @@ h1 {
       document.getElementById('outputReps').textContent = Math.round(outputReps * 10) / 10;
       document.getElementById('outputWeight').textContent = Math.round(outputWeight * 10) / 10;
       document.getElementById('outputRPE').textContent = targetRPE;
+
+      // Sync hidden inputs with their corresponding outputs
+      if (mode === 'weight') {
+        // targetWeight is hidden, sync it with outputWeight
+        document.getElementById('targetWeight').value = Math.round(outputWeight * 10) / 10;
+      } else {
+        // targetReps is hidden, sync it with outputReps
+        document.getElementById('targetReps').value = Math.round(outputReps * 10) / 10;
+      }
     }
 
     // Add event listeners to all inputs
