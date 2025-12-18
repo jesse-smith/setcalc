@@ -70,7 +70,7 @@ function getRepsFromPct(pct, rpe) {
 ```
 
 **Critical Implementation Details**:
-- RPE (Rate of Perceived Exertion) uses a 5-10 scale
+- RPE (Rate of Perceived Exertion) uses a 5-10 scale but allows inputs in (0,10].
 - RIR (Reps In Reserve) = 10 - RPE
 - Effective reps = actual reps + reps in reserve
 - The constant `0.0262` is specific to the Berger equation
@@ -290,7 +290,7 @@ Expected: ~108 lbs (weight increases as RPE decreases at same reps)
 ## Important Implementation Notes
 
 ### RPE Scale
-- Uses a 5-10 scale (not 0-10 or 6-10)
+- Allow 0 < RPE <= 10
 - RPE 10 = maximum effort (0 RIR)
 - RPE 5 = 5 reps in reserve
 - Step size: 0.5 (allows RPE 7.5, 8.5, etc.)
