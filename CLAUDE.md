@@ -9,6 +9,9 @@
 ### Key Features
 - Calculate target weight from target reps and RPE
 - Calculate target reps from target weight and RPE
+- Equipment selection with automatic base weight adjustment
+  - Preset options: None, Smith Machine, 45° Leg Press
+  - Custom equipment base weight option
 - Real-time input validation with user feedback
 - Progressive Web App (PWA) with offline support
 - Responsive design with light/dark mode support
@@ -55,7 +58,7 @@ There are **zero npm packages, build tools, or external libraries**. Everything 
 **Core Formula**: `pct = 100 * exp(0.0262 * (effectiveReps - 1))`
 
 ```javascript
-// Location: index.html:408-419
+// Location: index.html:467-478
 function getPct(reps, rpe) {
   const repsInReserve = 10 - rpe;
   const effectiveReps = reps + repsInReserve;
@@ -81,7 +84,7 @@ function getRepsFromPct(pct, rpe) {
 All inputs use a three-state validation system:
 
 ```javascript
-// Location: index.html:332-345
+// Location: index.html:391-404
 function setInvalid(inputId, message)  // Red border + error message
 function setEmpty(inputId)             // Red border, no message
 function clearValidation(inputId)      // Remove all validation styling
@@ -100,7 +103,7 @@ function clearValidation(inputId)      // Remove all validation styling
 ### 3. Mode Switching (Calculate Weight vs Calculate Reps)
 
 ```javascript
-// Location: index.html:316-329
+// Location: index.html:354-388
 let mode = 'weight'; // Global state variable
 
 function setMode(newMode) {
@@ -117,9 +120,71 @@ function setMode(newMode) {
 - `'reps'` - User inputs target weight, app calculates reps
 
 **Hidden Input Syncing**:
-When a mode is active, the corresponding hidden input (targetWeight in weight mode, targetReps in reps mode) is automatically synced with the calculated output value. This ensures consistency between displayed outputs and input values when the user switches modes (lines 480-487).
+When a mode is active, the corresponding hidden input (targetWeight in weight mode, targetReps in reps mode) is automatically synced with the calculated output value. This ensures consistency between displayed outputs and input values when the user switches modes (lines 547-553).
 
-### 4. CSS Custom Properties (Theming)
+### 4. Equipment Selection (Plate Weight vs Total Weight)
+
+The app distinguishes between **plate weight** (what the user loads) and **total weight** (what's actually lifted):
+
+```javascript
+// Location: index.html:357-375
+function getBaseWeight() {
+  const equipmentSelect = document.getElementById('equipment');
+  const selectedValue = equipmentSelect.value;
+  if (selectedValue === 'custom') {
+    const customInput = document.getElementById('customWeight');
+    const value = parseFloat(customInput.value);
+    return isNaN(value) ? 0 : value;
+  }
+  return parseFloat(selectedValue) || 0;
+}
+
+function onEquipmentChange() {
+  const equipmentSelect = document.getElementById('equipment');
+  const customWeightGroup = document.getElementById('customWeightGroup');
+  const isCustom = equipmentSelect.value === 'custom';
+  customWeightGroup.classList.toggle('hidden', !isCustom);
+  calculate();
+}
+```
+
+**Equipment Options** (lines 337-342):
+- **None** (value="0"): No base weight (barbell exercises where bar weight is loaded as plates)
+- **Smith Machine** (value="25"): 25 lbs base weight (typical smith machine bar)
+- **45° Leg Press** (value="167"): 167 lbs base weight (sled weight)
+- **Custom** (value="custom"): User-specified base weight via additional input field
+
+**Weight Calculation with Equipment**:
+```javascript
+// Location: index.html:516-540
+const baseWeight = getBaseWeight();
+
+// Reference set: convert plate weight to total weight
+const refTotalWeight = refWeight + baseWeight;
+const e1RM = refTotalWeight * refPct / 100;
+
+// When calculating target weight
+const totalOutputWeight = e1RM * 100 / targetPct;
+const outputWeight = totalOutputWeight - baseWeight; // Convert back to plate weight
+
+// When calculating target reps
+const totalTargetWeight = targetWeight + baseWeight;
+const targetPct = e1RM * 100 / totalTargetWeight;
+```
+
+**Key Concepts**:
+- User always inputs **plate weight** (what they load onto the equipment)
+- Calculations use **total weight** (plate weight + base weight)
+- Outputs show **plate weight** (for consistency with input)
+- Base weight is automatically added/subtracted during calculations
+
+**Custom Equipment UI**:
+- The custom weight input field (lines 345-349) is hidden by default
+- Shows when user selects "Custom" from equipment dropdown
+- Layout uses `.hidden` class toggle to prevent layout shift (line 373)
+- Custom weight input has its own validation (non-negative, allows 0)
+
+### 5. CSS Custom Properties (Theming)
 
 ```css
 /* Location: index.html:19-53 */
@@ -138,12 +203,18 @@ When a mode is active, the corresponding hidden input (targetWeight in weight mo
 
 **Theming Convention**: All colors use CSS variables, automatically switch based on system preference.
 
-**Toggle Design**: The mode toggle uses a sliding pill animation (lines 149-165) with a pseudo-element that transitions smoothly between modes using CSS transforms.
+**Toggle Design**: The mode toggle uses a sliding pill animation (lines 161-186) with a pseudo-element that transitions smoothly between modes using CSS transforms.
 
-### 5. Service Worker (PWA)
+**Select Dropdown Styling**: Equipment selection uses a custom-styled `<select>` element (lines 133-152) with:
+- Custom dropdown arrow using inline SVG data URI
+- `appearance: none` to remove default browser styling
+- Consistent styling with text inputs
+- Full theme support (light/dark mode)
+
+### 6. Service Worker (PWA)
 
 ```javascript
-// Location: index.html:499-526
+// Location: index.html:567-594
 // Inline service worker code stored as string
 // Converted to blob and registered via object URL
 // Implements install, activate, fetch lifecycle
@@ -152,8 +223,9 @@ When a mode is active, the corresponding hidden input (targetWeight in weight mo
 **Cache Strategy**: Cache-first with network fallback
 
 **Default Values**: The application initializes with sensible defaults:
-- Reference set: 100 lbs, 10 reps, RPE 9
+- Reference set: 100 lbs (plate weight), 10 reps, RPE 9, No equipment
 - Target set: 5 reps, RPE 9 (in weight calculation mode)
+- Equipment: None (0 lbs base weight)
 - These values produce an initial calculation that demonstrates the app's functionality
 
 ## Development Workflow
@@ -226,11 +298,24 @@ git push origin v1.0.0
 
 #### Adding a New Input Field
 
-1. Add HTML in appropriate `.section` div (around lines 269-313)
-2. Add validation function following the pattern (lines 347-398)
-3. Call validation in `calculate()` function (line 421+)
-4. Update output calculation logic if needed (lines 457-488)
-5. Add event listener (automatic via `querySelectorAll` at line 491)
+1. Add HTML in appropriate `.section` div (around lines 272-351)
+2. Add validation function following the pattern (lines 406-457)
+3. Call validation in `calculate()` function (line 480+)
+4. Update output calculation logic if needed (lines 516-553)
+5. Add event listener (automatic via `querySelectorAll` at line 557, or manually for `<select>` elements)
+
+#### Adding Equipment Options
+
+1. Add new `<option>` in equipment select (lines 337-342)
+2. Set `value` attribute to the base weight in pounds (e.g., `value="45"` for 45 lbs)
+3. Provide descriptive text for the option (e.g., "Olympic Barbell")
+4. No additional code changes needed - `getBaseWeight()` handles numeric values automatically
+5. Test calculations to verify base weight is correctly applied
+
+**Example**:
+```html
+<option value="45">Olympic Barbell</option>
+```
 
 #### Modifying Calculation Logic
 
@@ -250,14 +335,15 @@ git push origin v1.0.0
 
 #### Changing Validation Rules
 
-1. Find the appropriate validation function (lines 347-398)
+1. Find the appropriate validation function (lines 406-457)
 2. Update the validation logic
 3. Update error messages to be user-friendly
 4. Ensure `min`, `max`, `step` attributes on `<input>` match validation
 
 **Important**: When changing validation rules for reps or weight:
-- Reps validation uses `value < 0` to allow zero reps (line 354)
-- Weight validation uses `value <= 0` to require positive values (line 373)
+- Reps validation uses `value < 0` to allow zero reps (line 413)
+- Weight validation uses `value <= 0` to require positive values (line 432)
+- Custom weight validation allows zero (for equipment with negligible base weight)
 - This distinction is intentional for different use cases
 
 ## Testing Guidelines
@@ -271,6 +357,12 @@ Since there are no automated tests, verify these scenarios:
 - [ ] Verify weight calculation mode with reference set
 - [ ] Verify reps calculation mode with reference set
 - [ ] Check edge cases (very low/high reps, different RPE values)
+- [ ] Test equipment selection:
+  - [ ] "None" option produces same results as before equipment feature
+  - [ ] Smith Machine (25 lbs) adds/subtracts correctly
+  - [ ] 45° Leg Press (167 lbs) adds/subtracts correctly
+  - [ ] Custom equipment with various base weights
+  - [ ] Switching equipment recalculates output correctly
 
 **Validation**:
 - [ ] Empty fields show red border without error message
@@ -281,7 +373,11 @@ Since there are no automated tests, verify these scenarios:
 **UI/UX**:
 - [ ] Mode toggle switches between weight/reps calculation
 - [ ] Appropriate input field shows/hides based on mode
+- [ ] Equipment dropdown displays all options correctly
+- [ ] Custom weight input shows/hides when selecting/deselecting "Custom"
+- [ ] No layout shift when toggling custom equipment visibility
 - [ ] All labels are readable in both light and dark mode
+- [ ] Select dropdown arrow displays correctly in both themes
 - [ ] Layout works on mobile (320px) and desktop (1920px+)
 - [ ] Touch targets are at least 44px for mobile
 
@@ -292,6 +388,7 @@ Since there are no automated tests, verify these scenarios:
 
 ### Test Cases for Berger Equation
 
+**Without Equipment** (base weight = 0):
 ```
 Reference: 100 lbs, 5 reps, RPE 8
 Target: 8 reps, RPE 8
@@ -300,6 +397,30 @@ Expected: ~81 lbs (weight decreases as reps increase at same RPE)
 Reference: 100 lbs, 5 reps, RPE 8
 Target: 5 reps, RPE 6
 Expected: ~108 lbs (weight increases as RPE decreases at same reps)
+```
+
+**With Equipment** (testing base weight logic):
+```
+Reference: 100 lbs (plate), 5 reps, RPE 8, Smith Machine (25 lbs base)
+Total weight lifted: 125 lbs
+Target: 5 reps, RPE 6
+Expected plate weight: ~110 lbs (total ~135 lbs)
+Calculation: Same percentage increase, but base weight remains constant
+
+Reference: 100 lbs (plate), 10 reps, RPE 9, 45° Leg Press (167 lbs base)
+Total weight lifted: 267 lbs
+Target: 5 reps, RPE 9
+Expected plate weight: ~114 lbs (total ~281 lbs)
+Calculation: Plate weight increases due to fewer reps, base weight stays 167 lbs
+```
+
+**Edge Cases**:
+```
+Reference: 0 lbs (plate), 10 reps, RPE 9, Smith Machine (25 lbs base)
+Total weight lifted: 25 lbs (base weight only)
+Target: 5 reps, RPE 9
+Expected: Plate weight calculated from 25 lb reference
+Note: Tests that calculations work with zero plate weight (bodyweight-style movements)
 ```
 
 ## Important Implementation Notes
@@ -312,14 +433,15 @@ Expected: ~108 lbs (weight increases as RPE decreases at same reps)
 
 ### Rounding
 - All outputs rounded to 1 decimal place: `Math.round(value * 10) / 10`
-- Location: index.html:476-478
-- Hidden inputs are also synced with the same rounding (lines 483, 486)
+- Location: index.html:542-544
+- Hidden inputs are also synced with the same rounding (lines 549, 552)
 
 ### Input Event Handling
-- All inputs trigger calculation on every keystroke
-- Event listener: `input.addEventListener('input', calculate)` (line 492)
+- All text/number inputs trigger calculation on every keystroke
+- Event listener: `input.addEventListener('input', calculate)` (line 558)
+- Equipment select triggers on change: `equipment.addEventListener('change', onEquipmentChange)` (line 562)
 - No debouncing - calculations are fast enough
-- Initial calculation runs on page load (line 496)
+- Initial calculation runs on page load (line 565)
 
 ### Browser Compatibility
 - Target: Modern browsers (ES6+ required)
@@ -353,10 +475,27 @@ Expected: ~108 lbs (weight increases as RPE decreases at same reps)
 - **Cause**: Forgot to update light mode override
 - **Solution**: Update both `:root` and `@media (prefers-color-scheme: light)`
 
+**Problem**: Equipment calculations seem incorrect
+- **Cause**: Misunderstanding of plate weight vs total weight
+- **Solution**: Remember: inputs/outputs are plate weight, but calculations use total weight (plate + base)
+
+**Problem**: Custom equipment input not showing
+- **Cause**: Equipment dropdown not set to "Custom"
+- **Solution**: Select "Custom" option to reveal base weight input field
+
+**Problem**: Layout shifts when toggling equipment
+- **Cause**: Custom weight field not properly hidden with `.hidden` class
+- **Solution**: Ensure `classList.toggle('hidden', condition)` is used (line 373)
+
 ## Version History
 
 Recent significant changes (from git log):
 
+- `d4b52a7` - Merge equipment selection feature (feature)
+- `c4dcb56` - Add smith machine as equipment option (feature)
+- `46ac840` - Fix layout shift when toggling custom equipment (bug fix)
+- `08c55b5` - Add equipment selection for plate weight calculation (feature)
+- `7db9b2f` - Update CLAUDE.md with recent codebase changes (docs)
 - `6df9fec` - Allow reps to be 0 (validation update)
 - `13dad47` - Update initial values (UX)
 - `f8af0ac` - Sync hidden inputs with corresponding outputs (feature)
@@ -401,9 +540,25 @@ Recent significant changes (from git log):
 ---
 
 **Last Updated**: 2025-12-19
-**Document Version**: 1.1.0
+**Document Version**: 1.2.0
 
 ## Changelog
+
+### Version 1.2.0 (2025-12-19)
+- **Major Feature**: Documented equipment selection system
+  - Added comprehensive section on plate weight vs total weight calculation
+  - Documented `getBaseWeight()` and `onEquipmentChange()` functions
+  - Explained preset equipment options (None, Smith Machine, 45° Leg Press)
+  - Documented custom equipment input functionality
+- Added "Adding Equipment Options" task to Common Tasks section
+- Updated calculation logic documentation with equipment integration
+- Added equipment-specific test cases for Berger equation
+- Expanded manual testing checklist with equipment scenarios
+- Added troubleshooting section for equipment-related issues
+- Updated CSS documentation to include select dropdown styling
+- Updated all line number references throughout document
+- Updated version history with equipment selection commits
+- Updated default values to include equipment selection
 
 ### Version 1.1.0 (2025-12-19)
 - Updated line number references throughout document
