@@ -55,7 +55,7 @@ There are **zero npm packages, build tools, or external libraries**. Everything 
 **Core Formula**: `pct = 100 * exp(0.0262 * (effectiveReps - 1))`
 
 ```javascript
-// Location: index.html:372-383
+// Location: index.html:408-419
 function getPct(reps, rpe) {
   const repsInReserve = 10 - rpe;
   const effectiveReps = reps + repsInReserve;
@@ -65,7 +65,7 @@ function getPct(reps, rpe) {
 function getRepsFromPct(pct, rpe) {
   const repsInReserve = 10 - rpe;
   const effectiveReps = 1 + Math.log(pct / 100) / 0.0262;
-  return Math.max(1, effectiveReps - repsInReserve);
+  return Math.max(0, effectiveReps - repsInReserve);
 }
 ```
 
@@ -74,23 +74,23 @@ function getRepsFromPct(pct, rpe) {
 - RIR (Reps In Reserve) = 10 - RPE
 - Effective reps = actual reps + reps in reserve
 - The constant `0.0262` is specific to the Berger equation
-- Always ensure reps ≥ 1 in the inverse calculation
+- Reps can be 0 or greater (allows for calculating scenarios with maximum weight)
 
 ### 2. Input Validation Pattern
 
 All inputs use a three-state validation system:
 
 ```javascript
-// Location: index.html:296-309
+// Location: index.html:332-345
 function setInvalid(inputId, message)  // Red border + error message
 function setEmpty(inputId)             // Red border, no message
 function clearValidation(inputId)      // Remove all validation styling
 ```
 
 **Validation Rules**:
-- Reps: positive numbers, max 50
-- Weight: positive numbers, no max
-- RPE: positive numbers, max 10, step 0.5
+- Reps: non-negative numbers (≥ 0), max 50
+- Weight: positive numbers (> 0), no max
+- RPE: positive numbers (> 0), max 10, step 0.5
 
 **UI States**:
 - Empty field → Red border, no error message
@@ -100,7 +100,7 @@ function clearValidation(inputId)      // Remove all validation styling
 ### 3. Mode Switching (Calculate Weight vs Calculate Reps)
 
 ```javascript
-// Location: index.html:283-293
+// Location: index.html:316-329
 let mode = 'weight'; // Global state variable
 
 function setMode(newMode) {
@@ -115,6 +115,9 @@ function setMode(newMode) {
 **Modes**:
 - `'weight'` - User inputs target reps, app calculates weight
 - `'reps'` - User inputs target weight, app calculates reps
+
+**Hidden Input Syncing**:
+When a mode is active, the corresponding hidden input (targetWeight in weight mode, targetReps in reps mode) is automatically synced with the calculated output value. This ensures consistency between displayed outputs and input values when the user switches modes (lines 480-487).
 
 ### 4. CSS Custom Properties (Theming)
 
@@ -135,16 +138,23 @@ function setMode(newMode) {
 
 **Theming Convention**: All colors use CSS variables, automatically switch based on system preference.
 
+**Toggle Design**: The mode toggle uses a sliding pill animation (lines 149-165) with a pseudo-element that transitions smoothly between modes using CSS transforms.
+
 ### 5. Service Worker (PWA)
 
 ```javascript
-// Location: index.html:454-481
+// Location: index.html:499-526
 // Inline service worker code stored as string
 // Converted to blob and registered via object URL
 // Implements install, activate, fetch lifecycle
 ```
 
 **Cache Strategy**: Cache-first with network fallback
+
+**Default Values**: The application initializes with sensible defaults:
+- Reference set: 100 lbs, 10 reps, RPE 9
+- Target set: 5 reps, RPE 9 (in weight calculation mode)
+- These values produce an initial calculation that demonstrates the app's functionality
 
 ## Development Workflow
 
@@ -216,11 +226,11 @@ git push origin v1.0.0
 
 #### Adding a New Input Field
 
-1. Add HTML in appropriate `.section` div (around line 234-278)
-2. Add validation function following the pattern (lines 311-362)
-3. Call validation in `calculate()` function (line 385+)
-4. Update output calculation logic if needed (lines 421-438)
-5. Add event listener (automatic via `querySelectorAll` at line 446)
+1. Add HTML in appropriate `.section` div (around lines 269-313)
+2. Add validation function following the pattern (lines 347-398)
+3. Call validation in `calculate()` function (line 421+)
+4. Update output calculation logic if needed (lines 457-488)
+5. Add event listener (automatic via `querySelectorAll` at line 491)
 
 #### Modifying Calculation Logic
 
@@ -240,10 +250,15 @@ git push origin v1.0.0
 
 #### Changing Validation Rules
 
-1. Find the appropriate validation function (lines 311-362)
+1. Find the appropriate validation function (lines 347-398)
 2. Update the validation logic
 3. Update error messages to be user-friendly
 4. Ensure `min`, `max`, `step` attributes on `<input>` match validation
+
+**Important**: When changing validation rules for reps or weight:
+- Reps validation uses `value < 0` to allow zero reps (line 354)
+- Weight validation uses `value <= 0` to require positive values (line 373)
+- This distinction is intentional for different use cases
 
 ## Testing Guidelines
 
@@ -297,12 +312,14 @@ Expected: ~108 lbs (weight increases as RPE decreases at same reps)
 
 ### Rounding
 - All outputs rounded to 1 decimal place: `Math.round(value * 10) / 10`
-- Location: index.html:440-442
+- Location: index.html:476-478
+- Hidden inputs are also synced with the same rounding (lines 483, 486)
 
 ### Input Event Handling
 - All inputs trigger calculation on every keystroke
-- Event listener: `input.addEventListener('input', calculate)`
+- Event listener: `input.addEventListener('input', calculate)` (line 492)
 - No debouncing - calculations are fast enough
+- Initial calculation runs on page load (line 496)
 
 ### Browser Compatibility
 - Target: Modern browsers (ES6+ required)
@@ -340,12 +357,16 @@ Expected: ~108 lbs (weight increases as RPE decreases at same reps)
 
 Recent significant changes (from git log):
 
+- `6df9fec` - Allow reps to be 0 (validation update)
+- `13dad47` - Update initial values (UX)
+- `f8af0ac` - Sync hidden inputs with corresponding outputs (feature)
+- `308227c` - Add cross-browser support for toggle button states (compatibility)
+- `e936dab` - Add smooth sliding pill animation to toggle (UX enhancement)
+- `36df307` - Increase toggle border-radius for pill shape design (UI)
+- `fa12536` - Add comprehensive CLAUDE.md documentation for AI assistants (docs)
 - `d9a1c83` - Deploy on version tags (infrastructure)
 - `eaa9237` - Rename toggle options (UX)
 - `e378f56` - Re-order input sections (layout)
-- `b1b9003` - Move output to top (layout)
-- `977fdfc` - Remove tailwind CDN (simplification)
-- `0357207` - Add static pages deployment (infrastructure)
 
 ## Resources
 
@@ -379,5 +400,19 @@ Recent significant changes (from git log):
 
 ---
 
-**Last Updated**: 2025-12-18
-**Document Version**: 1.0.0
+**Last Updated**: 2025-12-19
+**Document Version**: 1.1.0
+
+## Changelog
+
+### Version 1.1.0 (2025-12-19)
+- Updated line number references throughout document
+- Documented new feature: hidden input syncing
+- Documented validation change: reps can now be 0
+- Updated initial default values
+- Added documentation for toggle pill animation
+- Updated version history with recent commits
+- Fixed code examples to match current implementation
+
+### Version 1.0.0 (2025-12-18)
+- Initial comprehensive documentation
