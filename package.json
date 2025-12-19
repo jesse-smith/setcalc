@@ -1,0 +1,22 @@
+{
+  "name": "setcalc",
+  "version": "1.0.0",
+  "description": "Resistance training calculator using the Berger equation",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "playwright test",
+    "test:ui:headed": "playwright test --headed",
+    "playwright:install": "playwright install --with-deps chromium"
+  },
+  "keywords": ["fitness", "training", "calculator", "pwa"],
+  "author": "Jesse Smith",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "vitest": "^1.0.0"
+  }
+}
