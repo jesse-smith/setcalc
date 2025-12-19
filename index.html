@@ -130,6 +130,27 @@ h1 {
   border-color: var(--border-invalid);
 }
 
+.input-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  font-size: 16px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  transition: border-color 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+
+.input-group select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
 .error-message {
   color: var(--text-error);
   font-size: 11px;
@@ -310,10 +331,46 @@ h1 {
         <div class="error-message" id="refRPEError"></div>
       </div>
     </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Equipment</label>
+        <select id="equipment">
+          <option value="0">None</option>
+          <option value="167">45° Leg Press</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="input-group hidden" id="customWeightGroup">
+        <label>Base Weight</label>
+        <input type="number" id="customWeight" min="0" step="0.5" value="0">
+        <div class="error-message" id="customWeightError"></div>
+      </div>
+    </div>
   </div>
 
   <script>
     let mode = 'weight'; // 'weight' = calculate weight (user inputs reps), 'reps' = calculate reps (user inputs weight)
+
+    // Get equipment base weight
+    function getBaseWeight() {
+      const equipmentSelect = document.getElementById('equipment');
+      const selectedValue = equipmentSelect.value;
+      if (selectedValue === 'custom') {
+        const customInput = document.getElementById('customWeight');
+        const value = parseFloat(customInput.value);
+        return isNaN(value) ? 0 : value;
+      }
+      return parseFloat(selectedValue) || 0;
+    }
+
+    // Handle equipment selection change
+    function onEquipmentChange() {
+      const equipmentSelect = document.getElementById('equipment');
+      const customWeightGroup = document.getElementById('customWeightGroup');
+      const isCustom = equipmentSelect.value === 'custom';
+      customWeightGroup.classList.toggle('hidden', !isCustom);
+      calculate();
+    }
 
     function setMode(newMode) {
       mode = newMode;
@@ -454,23 +511,30 @@ h1 {
         return;
       }
 
+      // Get equipment base weight (for converting plate weight to total weight)
+      const baseWeight = getBaseWeight();
+
       // Calculate estimated 1RM from reference set
-      // e1RM = weight * pct / 100 (pct scales up to 1RM)
+      // User enters plate weight; total weight = plate weight + base weight
+      // e1RM = totalWeight * pct / 100 (pct scales up to 1RM)
       const refPct = getPct(refReps, refRPE);
-      const e1RM = refWeight * refPct / 100;
+      const refTotalWeight = refWeight + baseWeight;
+      const e1RM = refTotalWeight * refPct / 100;
 
       let outputReps, outputWeight;
 
       if (mode === 'weight') {
         // User provides target reps, calculate weight
         const targetPct = getPct(targetReps, targetRPE);
-        outputWeight = e1RM * 100 / targetPct;
+        const totalOutputWeight = e1RM * 100 / targetPct;
+        outputWeight = totalOutputWeight - baseWeight; // Convert back to plate weight
         outputReps = targetReps;
       } else {
-        // User provides target weight, calculate reps
-        const targetPct = e1RM * 100 / targetWeight;
+        // User provides target weight (plate weight), calculate reps
+        const totalTargetWeight = targetWeight + baseWeight;
+        const targetPct = e1RM * 100 / totalTargetWeight;
         outputReps = getRepsFromPct(targetPct, targetRPE);
-        outputWeight = targetWeight;
+        outputWeight = targetWeight; // Already plate weight
       }
 
       document.getElementById('outputReps').textContent = Math.round(outputReps * 10) / 10;
@@ -491,6 +555,9 @@ h1 {
     document.querySelectorAll('input').forEach(input => {
       input.addEventListener('input', calculate);
     });
+
+    // Add event listener for equipment select
+    document.getElementById('equipment').addEventListener('change', onEquipmentChange);
 
     // Initial calculation
     calculate();
