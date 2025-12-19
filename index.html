@@ -350,20 +350,12 @@ h1 {
     </div>
   </div>
 
-  <script>
-    let mode = 'weight'; // 'weight' = calculate weight (user inputs reps), 'reps' = calculate reps (user inputs weight)
+  <script type="module">
+    import { getPct, getRepsFromPct } from './src/calc.js';
+    import { validateReps, validateWeight, validateRPE, clearValidation } from './src/validation.js';
+    import { getBaseWeight, clearOutputs } from './src/utils.js';
 
-    // Get equipment base weight
-    function getBaseWeight() {
-      const equipmentSelect = document.getElementById('equipment');
-      const selectedValue = equipmentSelect.value;
-      if (selectedValue === 'custom') {
-        const customInput = document.getElementById('customWeight');
-        const value = parseFloat(customInput.value);
-        return isNaN(value) ? 0 : value;
-      }
-      return parseFloat(selectedValue) || 0;
-    }
+    let mode = 'weight'; // 'weight' = calculate weight (user inputs reps), 'reps' = calculate reps (user inputs weight)
 
     // Handle equipment selection change
     function onEquipmentChange() {
@@ -374,7 +366,8 @@ h1 {
       calculate();
     }
 
-    function setMode(newMode) {
+    // Make setMode available globally for onclick handlers
+    window.setMode = function(newMode) {
       mode = newMode;
       document.querySelector('.toggle-group').classList.toggle('mode-reps', mode === 'reps');
       document.getElementById('toggleWeight').classList.toggle('active', mode === 'weight');
@@ -385,96 +378,6 @@ h1 {
       clearValidation('targetReps');
       clearValidation('targetWeight');
       calculate();
-    }
-
-    // Validation helpers
-    function setInvalid(inputId, message) {
-      document.getElementById(inputId).classList.add('invalid');
-      document.getElementById(inputId + 'Error').textContent = message;
-    }
-
-    function setEmpty(inputId) {
-      document.getElementById(inputId).classList.add('invalid');
-      document.getElementById(inputId + 'Error').textContent = '';
-    }
-
-    function clearValidation(inputId) {
-      document.getElementById(inputId).classList.remove('invalid');
-      document.getElementById(inputId + 'Error').textContent = '';
-    }
-
-    function validateReps(inputId) {
-      const input = document.getElementById(inputId);
-      if (input.value === '') {
-        setEmpty(inputId);
-        return null;
-      }
-      const value = parseFloat(input.value);
-      if (isNaN(value) || value < 0) {
-        setInvalid(inputId, 'Reps must be ≥ 0');
-        return null;
-      }
-      if (value > 50) {
-        setInvalid(inputId, 'Reps must be ≤ 50');
-        return null;
-      }
-      clearValidation(inputId);
-      return value;
-    }
-
-    function validateWeight(inputId) {
-      const input = document.getElementById(inputId);
-      if (input.value === '') {
-        setEmpty(inputId);
-        return null;
-      }
-      const value = parseFloat(input.value);
-      if (isNaN(value) || value <= 0) {
-        setInvalid(inputId, 'Weight must be positive');
-        return null;
-      }
-      clearValidation(inputId);
-      return value;
-    }
-
-    function validateRPE(inputId) {
-      const input = document.getElementById(inputId);
-      if (input.value === '') {
-        setEmpty(inputId);
-        return null;
-      }
-      const value = parseFloat(input.value);
-      if (isNaN(value) || value <= 0) {
-        setInvalid(inputId, 'RPE must be positive');
-        return null;
-      }
-      if (value > 10) {
-        setInvalid(inputId, 'RPE must be ≤ 10');
-        return null;
-      }
-      clearValidation(inputId);
-      return value;
-    }
-
-    function clearOutputs() {
-      document.getElementById('outputReps').textContent = '—';
-      document.getElementById('outputWeight').textContent = '—';
-      document.getElementById('outputRPE').textContent = '—';
-    }
-
-    // Berger equation: pct = 100 * exp(0.0262 * (reps - 1))
-    // pct acts as a multiplier: 100 at 1 rep, increases with more reps
-    function getPct(reps, rpe) {
-      const repsInReserve = 10 - rpe;
-      const effectiveReps = reps + repsInReserve;
-      return 100 * Math.exp(0.0262 * (effectiveReps - 1));
-    }
-
-    // Inverse: reps = 1 + ln(pct / 100) / 0.0262
-    function getRepsFromPct(pct, rpe) {
-      const repsInReserve = 10 - rpe;
-      const effectiveReps = 1 + Math.log(pct / 100) / 0.0262;
-      return Math.max(0, effectiveReps - repsInReserve);
     }
 
     function calculate() {
@@ -567,18 +470,23 @@ h1 {
     // Register service worker for offline support (PWA)
     if ('serviceWorker' in navigator) {
       const swCode = `
-        const CACHE_NAME = 'setcalc-v1';
+        const CACHE_NAME = 'setcalc-v2';
+        const urlsToCache = [
+          '/',
+          '/index.html',
+          '/src/calc.js',
+          '/src/validation.js',
+          '/src/utils.js'
+        ];
         self.addEventListener('install', e => {
           e.waitUntil(
-            caches.open(CACHE_NAME).then(cache => 
-              cache.add(new Request(self.registration.scope, {cache: 'reload'}))
-            )
+            caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
           );
           self.skipWaiting();
         });
         self.addEventListener('activate', e => {
           e.waitUntil(
-            caches.keys().then(keys => 
+            caches.keys().then(keys =>
               Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
             )
           );
