@@ -5,6 +5,9 @@ export default defineConfig({
     // Environment for DOM testing
     environment: 'jsdom',
 
+    // Only run .test.js files, not .spec.js (those are for Playwright)
+    include: ['tests/**/*.test.js'],
+
     // Coverage configuration
     coverage: {
       provider: 'v8',

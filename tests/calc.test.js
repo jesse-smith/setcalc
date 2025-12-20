@@ -114,8 +114,9 @@ describe('getRepsFromPct', () => {
 
   test('handles fractional RPE', () => {
     const reps = getRepsFromPct(120, 7.5);
-    expect(reps).toBeGreaterThan(getRepsFromPct(120, 8));
-    expect(reps).toBeLessThan(getRepsFromPct(120, 7));
+    // At lower RPE (more RIR), you do fewer reps at the same percentage
+    expect(reps).toBeLessThan(getRepsFromPct(120, 8));
+    expect(reps).toBeGreaterThan(getRepsFromPct(120, 7));
   });
 
   test('inverse function consistency: getPct then getRepsFromPct', () => {

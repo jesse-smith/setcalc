@@ -128,33 +128,58 @@ describe('clearOutputs', () => {
   beforeEach(cleanup);
 
   test('sets outputReps to em dash', () => {
-    const output = document.createElement('span');
-    output.id = 'outputReps';
-    output.textContent = '10';
-    document.body.appendChild(output);
+    const outputReps = document.createElement('span');
+    outputReps.id = 'outputReps';
+    outputReps.textContent = '10';
+    document.body.appendChild(outputReps);
+
+    // clearOutputs() needs all three elements to exist
+    const outputWeight = document.createElement('span');
+    outputWeight.id = 'outputWeight';
+    document.body.appendChild(outputWeight);
+
+    const outputRPE = document.createElement('span');
+    outputRPE.id = 'outputRPE';
+    document.body.appendChild(outputRPE);
 
     clearOutputs();
-    expect(output.textContent).toBe('—');
+    expect(outputReps.textContent).toBe('—');
   });
 
   test('sets outputWeight to em dash', () => {
-    const output = document.createElement('span');
-    output.id = 'outputWeight';
-    output.textContent = '100';
-    document.body.appendChild(output);
+    const outputReps = document.createElement('span');
+    outputReps.id = 'outputReps';
+    document.body.appendChild(outputReps);
+
+    const outputWeight = document.createElement('span');
+    outputWeight.id = 'outputWeight';
+    outputWeight.textContent = '100';
+    document.body.appendChild(outputWeight);
+
+    const outputRPE = document.createElement('span');
+    outputRPE.id = 'outputRPE';
+    document.body.appendChild(outputRPE);
 
     clearOutputs();
-    expect(output.textContent).toBe('—');
+    expect(outputWeight.textContent).toBe('—');
   });
 
   test('sets outputRPE to em dash', () => {
-    const output = document.createElement('span');
-    output.id = 'outputRPE';
-    output.textContent = '8';
-    document.body.appendChild(output);
+    const outputReps = document.createElement('span');
+    outputReps.id = 'outputReps';
+    document.body.appendChild(outputReps);
+
+    const outputWeight = document.createElement('span');
+    outputWeight.id = 'outputWeight';
+    document.body.appendChild(outputWeight);
+
+    const outputRPE = document.createElement('span');
+    outputRPE.id = 'outputRPE';
+    outputRPE.textContent = '8';
+    document.body.appendChild(outputRPE);
 
     clearOutputs();
-    expect(output.textContent).toBe('—');
+    expect(outputRPE.textContent).toBe('—');
   });
 
   test('clears all outputs at once', () => {
