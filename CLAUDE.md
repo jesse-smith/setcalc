@@ -335,26 +335,30 @@ git push origin v1.0.0
 ### DO ✓
 
 1. **Keep it simple** - Maintain minimal dependencies and no build step
-2. **Use vanilla JS** - No frameworks or runtime libraries
-3. **Write tests first** - Ensure 100% coverage for all changes
-4. **Validate all inputs** - Use existing validation patterns in `src/validation.js`
-5. **Export functions** - Use ES module exports for testability
-6. **Maintain accessibility** - Use semantic HTML, proper labels
-7. **Support both themes** - Update both light and dark mode colors
-8. **Preserve PWA functionality** - Keep service worker working
-9. **Follow existing patterns** - Match the code style already present
-10. **Run tests before committing** - `npm test` must pass with 100% coverage
+2. **Keep repo size minimal** - Avoid unnecessary files; testing deps are dev-only and don't affect production
+3. **Maintain simple architecture** - Pure vanilla JS with minimal file structure (index.html + src/ modules)
+4. **Use vanilla JS** - No frameworks or runtime libraries
+5. **Write tests first** - Ensure 100% coverage for all changes
+6. **Validate all inputs** - Use existing validation patterns in `src/validation.js`
+7. **Export functions** - Use ES module exports for testability
+8. **Maintain accessibility** - Use semantic HTML, proper labels
+9. **Support both themes** - Update both light and dark mode colors
+10. **Preserve PWA functionality** - Keep service worker working
+11. **Follow existing patterns** - Match the code style already present
+12. **Run tests before committing** - `npm test` must pass with 100% coverage
 
 ### DON'T ✗
 
 1. **Don't add runtime dependencies** - Production code uses zero npm packages
 2. **Don't add build tools** - ES modules work natively in browsers
-3. **Don't skip tests** - 100% coverage is enforced by CI
-4. **Don't break the calculation** - The Berger equation constant (0.0262) is fixed
-5. **Don't remove mobile support** - Maintain viewport meta tags
-6. **Don't add frameworks** - No React, Vue, Angular, etc.
-7. **Don't complicate deployment** - Keep the simple tag-based deploy
-8. **Don't commit without testing** - Tests prevent bugs from reaching production
+3. **Don't create unnecessary files** - Keep the repo structure minimal (src/, tests/, config files only)
+4. **Don't over-complicate architecture** - Resist urge to add abstraction layers, helpers, or utilities beyond what's needed
+5. **Don't skip tests** - 100% coverage is enforced by CI
+6. **Don't break the calculation** - The Berger equation constant (0.0262) is fixed
+7. **Don't remove mobile support** - Maintain viewport meta tags
+8. **Don't add frameworks** - No React, Vue, Angular, etc.
+9. **Don't complicate deployment** - Keep the simple tag-based deploy
+10. **Don't commit without testing** - Tests prevent bugs from reaching production
 
 ### Common Tasks
 
@@ -650,14 +654,16 @@ Recent significant changes (from git log):
 
 1. **Does this require runtime dependencies?** → If yes, reconsider (dev dependencies OK)
 2. **Does this need a build step?** → If yes, reconsider (ES modules work natively)
-3. **Have I written tests?** → All code must have tests (100% coverage required)
-4. **Will this affect calculation accuracy?** → Update tests first, verify with known values
-5. **Is this change backwards compatible?** → Consider users' saved bookmarks
-6. **Does this work on mobile?** → Test on small screens (UI tests cover this)
-7. **Does this work offline?** → Verify service worker still functions
-8. **Does this work in both light and dark mode?** → Test both (UI tests cover this)
-9. **Do all tests pass?** → Run `npm test` before committing
-10. **Will CI pass?** → Tests run automatically but verify locally first
+3. **Will this increase repo complexity?** → Minimize files, folders, and abstraction layers
+4. **Is this file/directory necessary?** → Keep structure minimal (index.html, src/, tests/, configs only)
+5. **Have I written tests?** → All code must have tests (100% coverage required)
+6. **Will this affect calculation accuracy?** → Update tests first, verify with known values
+7. **Is this change backwards compatible?** → Consider users' saved bookmarks
+8. **Does this work on mobile?** → Test on small screens (UI tests cover this)
+9. **Does this work offline?** → Verify service worker still functions
+10. **Does this work in both light and dark mode?** → Test both (UI tests cover this)
+11. **Do all tests pass?** → Run `npm test` before committing
+12. **Will CI pass?** → Tests run automatically but verify locally first
 
 ## Contact & Contribution
 
