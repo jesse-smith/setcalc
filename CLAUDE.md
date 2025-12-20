@@ -23,33 +23,66 @@
 /
 ├── .github/
 │   └── workflows/
-│       └── static.yml          # GitHub Pages deployment workflow
-├── index.html                   # Entire application (HTML, CSS, JS)
+│       ├── static.yml          # GitHub Pages deployment
+│       ├── test.yml            # Unit tests (runs on push/PR)
+│       └── ui-tests.yml        # UI tests (manual/pre-deploy)
+├── src/
+│   ├── calc.js                 # Calculation functions (Berger equation)
+│   ├── validation.js           # Input validation logic
+│   └── utils.js                # Utility functions
+├── tests/
+│   ├── calc.test.js            # Unit tests for calculations
+│   ├── validation.test.js      # Unit tests for validation
+│   ├── utils.test.js           # Unit tests for utilities
+│   └── ui.spec.js              # End-to-end UI tests (Playwright)
+├── index.html                   # Main application (imports ES modules)
+├── package.json                 # Dev dependencies (testing only)
+├── vitest.config.js            # Vitest configuration
+├── playwright.config.js        # Playwright configuration
 ├── README.md                    # User-facing documentation
 └── CLAUDE.md                    # This file
 ```
 
 ### Architecture Philosophy
 
-This is an **intentionally simple, single-file application**. The entire codebase lives in `index.html` with inline CSS and JavaScript. This design choice prioritizes:
+This is an **intentionally simple application** with minimal dependencies. The application uses ES modules for code organization while maintaining zero runtime dependencies:
 
-1. **Simplicity** - No build tools, dependencies, or compilation steps
-2. **Portability** - Can be opened directly in a browser
-3. **Maintainability** - All code in one place, easy to understand
-4. **Performance** - No external dependencies to load
+**Production** (what users see):
+1. **No build step** - ES modules work natively in modern browsers
+2. **No runtime dependencies** - Pure vanilla JavaScript
+3. **Portable** - Can be opened directly in a browser
+4. **Performance** - No external libraries to load
+
+**Development** (testing only):
+1. **Modular code** - Functions split into `src/` for testability
+2. **Automated testing** - Vitest for unit tests, Playwright for UI tests
+3. **100% coverage** - All code paths tested and verified
+4. **CI/CD** - Tests run automatically on every commit
 
 ## Tech Stack
 
+**Production** (runtime):
 - **HTML5** - Semantic markup with mobile-first meta tags
 - **CSS3** - CSS custom properties for theming, flexbox for layout
-- **Vanilla JavaScript** - ES6+ features, no frameworks
-- **PWA** - Service Worker for offline caching (inline registration)
+- **Vanilla JavaScript** - ES6+ modules, no frameworks or libraries
+- **PWA** - Service Worker for offline caching
 - **GitHub Pages** - Static hosting
-- **GitHub Actions** - CI/CD deployment
 
-### No External Dependencies
+**Development** (testing):
+- **Vitest** - Fast unit testing with 100% coverage enforcement
+- **Playwright** - End-to-end browser testing for UI workflows
+- **jsdom** - DOM testing environment for Vitest
+- **GitHub Actions** - Automated CI/CD with test runs on every commit
 
-There are **zero npm packages, build tools, or external libraries**. Everything is vanilla web platform APIs.
+### Dependencies
+
+**Runtime**: Zero dependencies - everything uses vanilla web platform APIs
+
+**Development**: Minimal dev dependencies (testing only):
+- `vitest` - Unit test runner
+- `@vitest/coverage-v8` - Code coverage reporting
+- `jsdom` - DOM implementation for testing
+- `@playwright/test` - Browser automation for UI tests
 
 ## Key Code Patterns & Conventions
 
@@ -58,14 +91,14 @@ There are **zero npm packages, build tools, or external libraries**. Everything 
 **Core Formula**: `pct = 100 * exp(0.0262 * (effectiveReps - 1))`
 
 ```javascript
-// Location: index.html:467-478
-function getPct(reps, rpe) {
+// Location: src/calc.js
+export function getPct(reps, rpe) {
   const repsInReserve = 10 - rpe;
   const effectiveReps = reps + repsInReserve;
   return 100 * Math.exp(0.0262 * (effectiveReps - 1));
 }
 
-function getRepsFromPct(pct, rpe) {
+export function getRepsFromPct(pct, rpe) {
   const repsInReserve = 10 - rpe;
   const effectiveReps = 1 + Math.log(pct / 100) / 0.0262;
   return Math.max(0, effectiveReps - repsInReserve);
@@ -84,10 +117,10 @@ function getRepsFromPct(pct, rpe) {
 All inputs use a three-state validation system:
 
 ```javascript
-// Location: index.html:391-404
-function setInvalid(inputId, message)  // Red border + error message
-function setEmpty(inputId)             // Red border, no message
-function clearValidation(inputId)      // Remove all validation styling
+// Location: src/validation.js
+export function setInvalid(inputId, message)  // Red border + error message
+export function setEmpty(inputId)             // Red border, no message
+export function clearValidation(inputId)      // Remove all validation styling
 ```
 
 **Validation Rules**:
@@ -127,8 +160,8 @@ When a mode is active, the corresponding hidden input (targetWeight in weight mo
 The app distinguishes between **plate weight** (what the user loads) and **total weight** (what's actually lifted):
 
 ```javascript
-// Location: index.html:357-375
-function getBaseWeight() {
+// Location: src/utils.js
+export function getBaseWeight() {
   const equipmentSelect = document.getElementById('equipment');
   const selectedValue = equipmentSelect.value;
   if (selectedValue === 'custom') {
@@ -139,6 +172,7 @@ function getBaseWeight() {
   return parseFloat(selectedValue) || 0;
 }
 
+// Equipment change handler (index.html)
 function onEquipmentChange() {
   const equipmentSelect = document.getElementById('equipment');
   const customWeightGroup = document.getElementById('customWeightGroup');
@@ -148,7 +182,7 @@ function onEquipmentChange() {
 }
 ```
 
-**Equipment Options** (lines 337-342):
+**Equipment Options** (index.html):
 - **None** (value="0"): No base weight (barbell exercises where bar weight is loaded as plates)
 - **Smith Machine** (value="25"): 25 lbs base weight (typical smith machine bar)
 - **45° Leg Press** (value="167"): 167 lbs base weight (sled weight)
@@ -232,10 +266,35 @@ const targetPct = e1RM * 100 / totalTargetWeight;
 
 ### Making Changes
 
-1. **Edit `index.html` directly** - No build step required
-2. **Test locally** - Open `index.html` in a browser
-3. **Commit with descriptive messages** - See git history for examples
-4. **Push to trigger deployment** - Deployment happens on version tags
+1. **Edit source files** - Modify `src/*.js` for logic, `index.html` for UI
+2. **Run tests** - `npm test` to verify changes (100% coverage required)
+3. **Test locally** - Open `index.html` in a browser (ES modules work natively)
+4. **Commit with descriptive messages** - See git history for examples
+5. **Push** - Automated tests run on every commit
+6. **Verify CI passes** - Tests must pass before merging
+7. **Deploy** - Create version tag for production deployment
+
+### Local Development
+
+```bash
+# First time setup
+npm install
+
+# Make changes to src/ files
+vim src/calc.js
+
+# Run tests in watch mode (re-runs on file changes)
+npm run test:watch
+
+# Verify 100% coverage
+npm run test:coverage
+
+# Test in browser
+open index.html  # or use any local server
+
+# Run UI tests before committing
+npm run test:ui
+```
 
 ### Git Commit Conventions
 
@@ -275,34 +334,52 @@ git push origin v1.0.0
 
 ### DO ✓
 
-1. **Keep it simple** - Maintain the single-file architecture
-2. **Use vanilla JS** - No frameworks or libraries
-3. **Validate all inputs** - Use the existing validation pattern
-4. **Maintain accessibility** - Use semantic HTML, proper labels
-5. **Test calculations** - Verify Berger equation implementation
-6. **Support both themes** - Update both light and dark mode colors
-7. **Preserve PWA functionality** - Keep service worker working
-8. **Follow existing patterns** - Match the code style already present
+1. **Keep it simple** - Maintain minimal dependencies and no build step
+2. **Keep repo size minimal** - Avoid unnecessary files; testing deps are dev-only and don't affect production
+3. **Maintain simple architecture** - Pure vanilla JS with minimal file structure (index.html + src/ modules)
+4. **Use vanilla JS** - No frameworks or runtime libraries
+5. **Write tests first** - Ensure 100% coverage for all changes
+6. **Validate all inputs** - Use existing validation patterns in `src/validation.js`
+7. **Export functions** - Use ES module exports for testability
+8. **Maintain accessibility** - Use semantic HTML, proper labels
+9. **Support both themes** - Update both light and dark mode colors
+10. **Preserve PWA functionality** - Keep service worker working
+11. **Follow existing patterns** - Match the code style already present
+12. **Run tests before committing** - `npm test` must pass with 100% coverage
 
 ### DON'T ✗
 
-1. **Don't add build tools** - No webpack, vite, parcel, etc.
-2. **Don't add dependencies** - No npm, no external libraries
-3. **Don't split files** - Keep everything in `index.html`
-4. **Don't break the calculation** - The Berger equation constant is fixed
-5. **Don't remove mobile support** - Maintain viewport meta tags
-6. **Don't add frameworks** - No React, Vue, Angular, etc.
-7. **Don't complicate deployment** - Keep the simple tag-based deploy
+1. **Don't add runtime dependencies** - Production code uses zero npm packages
+2. **Don't add build tools** - ES modules work natively in browsers
+3. **Don't create unnecessary files** - Keep the repo structure minimal (src/, tests/, config files only)
+4. **Don't over-complicate architecture** - Resist urge to add abstraction layers, helpers, or utilities beyond what's needed
+5. **Don't skip tests** - 100% coverage is enforced by CI
+6. **Don't break the calculation** - The Berger equation constant (0.0262) is fixed
+7. **Don't remove mobile support** - Maintain viewport meta tags
+8. **Don't add frameworks** - No React, Vue, Angular, etc.
+9. **Don't complicate deployment** - Keep the simple tag-based deploy
+10. **Don't commit without testing** - Tests prevent bugs from reaching production
 
 ### Common Tasks
 
+#### Adding a New Function
+
+1. Add function to appropriate `src/` file (`calc.js`, `validation.js`, or `utils.js`)
+2. Export the function: `export function myFunction() { ... }`
+3. Import in `index.html`: `import { myFunction } from './src/utils.js';`
+4. **Write tests** in corresponding test file before implementing
+5. Run `npm run test:coverage` to verify 100% coverage
+6. Test manually in browser
+
 #### Adding a New Input Field
 
-1. Add HTML in appropriate `.section` div (around lines 272-351)
-2. Add validation function following the pattern (lines 406-457)
-3. Call validation in `calculate()` function (line 480+)
-4. Update output calculation logic if needed (lines 516-553)
-5. Add event listener (automatic via `querySelectorAll` at line 557, or manually for `<select>` elements)
+1. Add HTML in appropriate `.section` div in `index.html`
+2. Add validation function to `src/validation.js` following existing patterns
+3. Export the validation function
+4. Import and call validation in `calculate()` function
+5. Add event listener in `index.html`
+6. **Write unit tests** for the new validation function
+7. **Write UI tests** for the input field behavior
 
 #### Adding Equipment Options
 
@@ -322,9 +399,13 @@ git push origin v1.0.0
 **Warning**: Be extremely careful when modifying the Berger equation.
 
 1. The constant `0.0262` is scientifically derived - don't change it
-2. Test with known 1RM values to verify accuracy
-3. Ensure the inverse function (`getRepsFromPct`) stays synchronized
-4. Validate that `effectiveReps` calculation remains correct
+2. **Update tests first** - Modify `tests/calc.test.js` with expected behavior
+3. Run tests to verify they fail (TDD approach)
+4. Make the change in `src/calc.js`
+5. Ensure the inverse function (`getRepsFromPct`) stays synchronized
+6. Validate that `effectiveReps` calculation remains correct
+7. Verify all tests pass with 100% coverage
+8. Test with known 1RM values in the browser
 
 #### Updating Styles
 
@@ -348,9 +429,57 @@ git push origin v1.0.0
 
 ## Testing Guidelines
 
-### Manual Testing Checklist
+### Automated Testing
 
-Since there are no automated tests, verify these scenarios:
+The project has comprehensive automated tests with **100% code coverage** enforced by CI:
+
+**Test Suites**:
+- **Unit Tests** (`tests/*.test.js`) - 37 tests covering all functions
+  - `calc.test.js` - Berger equation calculations (5 tests)
+  - `validation.test.js` - Input validation logic (27 tests)
+  - `utils.test.js` - Utility functions (5 tests)
+- **UI Tests** (`tests/ui.spec.js`) - End-to-end browser testing
+  - User workflows, validation states, equipment selection, edge cases
+
+**Running Tests Locally**:
+```bash
+# Install dependencies (first time only)
+npm install
+
+# Run unit tests
+npm test
+
+# Run unit tests with coverage report
+npm run test:coverage
+
+# Run unit tests in watch mode (for development)
+npm run test:watch
+
+# Run UI tests (requires browser)
+npm run playwright:install  # First time only
+npm run test:ui
+
+# Run UI tests with visible browser
+npm run test:ui:headed
+```
+
+**Coverage Requirements**:
+- Lines: 100%
+- Functions: 100%
+- Branches: 100%
+- Statements: 100%
+
+Tests fail if coverage drops below these thresholds.
+
+**CI/CD Integration**:
+- Unit tests run automatically on every push and pull request
+- Coverage report posted as PR comment
+- UI tests run manually or on version tags
+- All tests must pass before merging
+
+### Manual Verification Checklist
+
+While automated tests cover all code paths, manually verify these user experience aspects:
 
 **Calculation Accuracy**:
 - [ ] Test with known 1RM values (e.g., 100 lbs @ 1 rep @ RPE 10 = 100 lbs)
@@ -523,13 +652,18 @@ Recent significant changes (from git log):
 
 ## Questions to Ask Before Making Changes
 
-1. **Does this change require external dependencies?** → If yes, reconsider
-2. **Does this break the single-file architecture?** → If yes, reconsider
-3. **Will this affect calculation accuracy?** → If yes, test extensively
-4. **Is this change backwards compatible?** → Consider users' saved bookmarks
-5. **Does this work on mobile?** → Test on small screens
-6. **Does this work offline?** → Verify service worker still functions
-7. **Does this work in both light and dark mode?** → Test both
+1. **Does this require runtime dependencies?** → If yes, reconsider (dev dependencies OK)
+2. **Does this need a build step?** → If yes, reconsider (ES modules work natively)
+3. **Will this increase repo complexity?** → Minimize files, folders, and abstraction layers
+4. **Is this file/directory necessary?** → Keep structure minimal (index.html, src/, tests/, configs only)
+5. **Have I written tests?** → All code must have tests (100% coverage required)
+6. **Will this affect calculation accuracy?** → Update tests first, verify with known values
+7. **Is this change backwards compatible?** → Consider users' saved bookmarks
+8. **Does this work on mobile?** → Test on small screens (UI tests cover this)
+9. **Does this work offline?** → Verify service worker still functions
+10. **Does this work in both light and dark mode?** → Test both (UI tests cover this)
+11. **Do all tests pass?** → Run `npm test` before committing
+12. **Will CI pass?** → Tests run automatically but verify locally first
 
 ## Contact & Contribution
 
@@ -539,10 +673,27 @@ Recent significant changes (from git log):
 
 ---
 
-**Last Updated**: 2025-12-19
-**Document Version**: 1.2.0
+**Last Updated**: 2025-12-20
+**Document Version**: 2.0.0
 
 ## Changelog
+
+### Version 2.0.0 (2025-12-20)
+- **Major Update**: Added comprehensive testing infrastructure
+  - Modularized code into ES modules (`src/calc.js`, `src/validation.js`, `src/utils.js`)
+  - Added Vitest for unit testing with 100% coverage enforcement
+  - Added Playwright for end-to-end UI testing
+  - Added GitHub Actions workflows for automated testing on every commit
+  - 37 unit tests covering all code paths and edge cases
+  - Comprehensive UI test suite for user workflows
+- Updated repository structure documentation
+- Updated architecture philosophy (production vs development)
+- Added detailed testing guidelines and commands
+- Updated development workflow with testing requirements
+- Revised DO/DON'T guidelines to include testing practices
+- Updated common tasks with test-driven approach
+- Added "Questions to Ask" for testing and CI
+- Removed outdated line number references
 
 ### Version 1.2.0 (2025-12-19)
 - **Major Feature**: Documented equipment selection system
