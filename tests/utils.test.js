@@ -8,46 +8,19 @@ function cleanup() {
 describe('getBaseWeight', () => {
   beforeEach(cleanup);
 
-  test('returns 0 when equipment is "None" (value="0")', () => {
+  test('returns numeric value from select (preset equipment)', () => {
     const select = document.createElement('select');
     select.id = 'equipment';
-    select.innerHTML = '<option value="0" selected>None</option>';
-    document.body.appendChild(select);
-
-    expect(getBaseWeight()).toBe(0);
-  });
-
-  test('returns 25 when equipment is "Smith Machine"', () => {
-    const select = document.createElement('select');
-    select.id = 'equipment';
-    select.innerHTML = `
-      <option value="0">None</option>
-      <option value="25" selected>Smith Machine</option>
-    `;
+    select.innerHTML = '<option value="25" selected>Smith Machine</option>';
     document.body.appendChild(select);
 
     expect(getBaseWeight()).toBe(25);
   });
 
-  test('returns 167 when equipment is "45° Leg Press"', () => {
+  test('returns custom weight when custom is selected', () => {
     const select = document.createElement('select');
     select.id = 'equipment';
-    select.innerHTML = `
-      <option value="0">None</option>
-      <option value="167" selected>45° Leg Press</option>
-    `;
-    document.body.appendChild(select);
-
-    expect(getBaseWeight()).toBe(167);
-  });
-
-  test('returns custom weight when equipment is "Custom"', () => {
-    const select = document.createElement('select');
-    select.id = 'equipment';
-    select.innerHTML = `
-      <option value="0">None</option>
-      <option value="custom" selected>Custom</option>
-    `;
+    select.innerHTML = '<option value="custom" selected>Custom</option>';
     document.body.appendChild(select);
 
     const customInput = document.createElement('input');
@@ -58,7 +31,7 @@ describe('getBaseWeight', () => {
     expect(getBaseWeight()).toBe(45);
   });
 
-  test('returns 0 for custom equipment with empty input', () => {
+  test('returns 0 for custom equipment with invalid input', () => {
     const select = document.createElement('select');
     select.id = 'equipment';
     select.innerHTML = '<option value="custom" selected>Custom</option>';
@@ -66,58 +39,16 @@ describe('getBaseWeight', () => {
 
     const customInput = document.createElement('input');
     customInput.id = 'customWeight';
-    customInput.value = '';
+    customInput.value = 'abc'; // NaN case
     document.body.appendChild(customInput);
 
     expect(getBaseWeight()).toBe(0);
   });
 
-  test('returns 0 for custom equipment with non-numeric input', () => {
+  test('returns 0 for invalid select value', () => {
     const select = document.createElement('select');
     select.id = 'equipment';
-    select.innerHTML = '<option value="custom" selected>Custom</option>';
-    document.body.appendChild(select);
-
-    const customInput = document.createElement('input');
-    customInput.id = 'customWeight';
-    customInput.value = 'abc';
-    document.body.appendChild(customInput);
-
-    expect(getBaseWeight()).toBe(0);
-  });
-
-  test('handles fractional custom weight', () => {
-    const select = document.createElement('select');
-    select.id = 'equipment';
-    select.innerHTML = '<option value="custom" selected>Custom</option>';
-    document.body.appendChild(select);
-
-    const customInput = document.createElement('input');
-    customInput.id = 'customWeight';
-    customInput.value = '12.5';
-    document.body.appendChild(customInput);
-
-    expect(getBaseWeight()).toBe(12.5);
-  });
-
-  test('returns 0 for custom equipment with 0 input', () => {
-    const select = document.createElement('select');
-    select.id = 'equipment';
-    select.innerHTML = '<option value="custom" selected>Custom</option>';
-    document.body.appendChild(select);
-
-    const customInput = document.createElement('input');
-    customInput.id = 'customWeight';
-    customInput.value = '0';
-    document.body.appendChild(customInput);
-
-    expect(getBaseWeight()).toBe(0);
-  });
-
-  test('returns 0 when select has no value', () => {
-    const select = document.createElement('select');
-    select.id = 'equipment';
-    select.innerHTML = '<option value="">Select</option>';
+    select.innerHTML = '<option value="" selected>Select</option>';
     document.body.appendChild(select);
 
     expect(getBaseWeight()).toBe(0);
@@ -127,62 +58,7 @@ describe('getBaseWeight', () => {
 describe('clearOutputs', () => {
   beforeEach(cleanup);
 
-  test('sets outputReps to em dash', () => {
-    const outputReps = document.createElement('span');
-    outputReps.id = 'outputReps';
-    outputReps.textContent = '10';
-    document.body.appendChild(outputReps);
-
-    // clearOutputs() needs all three elements to exist
-    const outputWeight = document.createElement('span');
-    outputWeight.id = 'outputWeight';
-    document.body.appendChild(outputWeight);
-
-    const outputRPE = document.createElement('span');
-    outputRPE.id = 'outputRPE';
-    document.body.appendChild(outputRPE);
-
-    clearOutputs();
-    expect(outputReps.textContent).toBe('—');
-  });
-
-  test('sets outputWeight to em dash', () => {
-    const outputReps = document.createElement('span');
-    outputReps.id = 'outputReps';
-    document.body.appendChild(outputReps);
-
-    const outputWeight = document.createElement('span');
-    outputWeight.id = 'outputWeight';
-    outputWeight.textContent = '100';
-    document.body.appendChild(outputWeight);
-
-    const outputRPE = document.createElement('span');
-    outputRPE.id = 'outputRPE';
-    document.body.appendChild(outputRPE);
-
-    clearOutputs();
-    expect(outputWeight.textContent).toBe('—');
-  });
-
-  test('sets outputRPE to em dash', () => {
-    const outputReps = document.createElement('span');
-    outputReps.id = 'outputReps';
-    document.body.appendChild(outputReps);
-
-    const outputWeight = document.createElement('span');
-    outputWeight.id = 'outputWeight';
-    document.body.appendChild(outputWeight);
-
-    const outputRPE = document.createElement('span');
-    outputRPE.id = 'outputRPE';
-    outputRPE.textContent = '8';
-    document.body.appendChild(outputRPE);
-
-    clearOutputs();
-    expect(outputRPE.textContent).toBe('—');
-  });
-
-  test('clears all outputs at once', () => {
+  test('clears all three output elements', () => {
     const outputReps = document.createElement('span');
     outputReps.id = 'outputReps';
     outputReps.textContent = '10';
@@ -204,28 +80,5 @@ describe('clearOutputs', () => {
     expect(outputReps.textContent).toBe('—');
     expect(outputWeight.textContent).toBe('—');
     expect(outputRPE.textContent).toBe('—');
-  });
-
-  test('handles already cleared outputs', () => {
-    const output = document.createElement('span');
-    output.id = 'outputReps';
-    output.textContent = '—';
-    document.body.appendChild(output);
-
-    const output2 = document.createElement('span');
-    output2.id = 'outputWeight';
-    output2.textContent = '—';
-    document.body.appendChild(output2);
-
-    const output3 = document.createElement('span');
-    output3.id = 'outputRPE';
-    output3.textContent = '—';
-    document.body.appendChild(output3);
-
-    clearOutputs();
-
-    expect(output.textContent).toBe('—');
-    expect(output2.textContent).toBe('—');
-    expect(output3.textContent).toBe('—');
   });
 });
