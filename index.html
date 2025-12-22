@@ -342,9 +342,9 @@ h1 {
         </select>
         <div class="error-message"></div>
       </div>
-      <div class="input-group hidden" id="customWeightGroup">
+      <div class="input-group" id="customWeightGroup">
         <label>Base Weight</label>
-        <input type="number" id="customWeight" min="0" step="0.5" value="0">
+        <input type="number" id="customWeight" min="0" step="0.5" value="0" disabled>
         <div class="error-message" id="customWeightError"></div>
       </div>
     </div>
@@ -360,9 +360,20 @@ h1 {
     // Handle equipment selection change
     function onEquipmentChange() {
       const equipmentSelect = document.getElementById('equipment');
-      const customWeightGroup = document.getElementById('customWeightGroup');
-      const isCustom = equipmentSelect.value === 'custom';
-      customWeightGroup.classList.toggle('hidden', !isCustom);
+      const customWeightInput = document.getElementById('customWeight');
+      const selectedValue = equipmentSelect.value;
+      const isCustom = selectedValue === 'custom';
+
+      if (isCustom) {
+        // Enable input for custom equipment
+        customWeightInput.disabled = false;
+        customWeightInput.value = customWeightInput.value || '0';
+      } else {
+        // Disable input and populate with preset value
+        customWeightInput.disabled = true;
+        customWeightInput.value = selectedValue;
+      }
+
       calculate();
     }
 
@@ -464,8 +475,8 @@ h1 {
     // Add event listener for equipment select
     document.getElementById('equipment').addEventListener('change', onEquipmentChange);
 
-    // Initial calculation
-    calculate();
+    // Initialize equipment state and calculate
+    onEquipmentChange();
 
     // Register service worker for offline support (PWA)
     if ('serviceWorker' in navigator) {
