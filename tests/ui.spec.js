@@ -223,20 +223,28 @@ test.describe('SetCalc UI Tests', () => {
       await expect(equipment).toHaveValue('0');
     });
 
-    test('shows custom weight input when custom is selected', async ({ page }) => {
-      await expect(page.locator('#customWeightGroup')).toHaveClass(/hidden/);
-
-      await page.locator('#equipment').selectOption('custom');
-
-      await expect(page.locator('#customWeightGroup')).not.toHaveClass(/hidden/);
+    test('base weight input is always visible', async ({ page }) => {
+      // Base weight input should always be visible
+      await expect(page.locator('#customWeightGroup')).toBeVisible();
+      await expect(page.locator('#customWeight')).toBeVisible();
     });
 
-    test('hides custom weight input when switching away from custom', async ({ page }) => {
+    test('enables custom weight input when custom is selected', async ({ page }) => {
+      // Input should be disabled initially (for preset equipment)
+      await expect(page.locator('#customWeight')).toBeDisabled();
+
       await page.locator('#equipment').selectOption('custom');
-      await expect(page.locator('#customWeightGroup')).not.toHaveClass(/hidden/);
+
+      // Input should now be enabled
+      await expect(page.locator('#customWeight')).toBeEnabled();
+    });
+
+    test('disables custom weight input when switching away from custom', async ({ page }) => {
+      await page.locator('#equipment').selectOption('custom');
+      await expect(page.locator('#customWeight')).toBeEnabled();
 
       await page.locator('#equipment').selectOption('0');
-      await expect(page.locator('#customWeightGroup')).toHaveClass(/hidden/);
+      await expect(page.locator('#customWeight')).toBeDisabled();
     });
 
     test('updates calculation when equipment changes', async ({ page }) => {
