@@ -162,22 +162,28 @@ The app distinguishes between **plate weight** (what the user loads) and **total
 ```javascript
 // Location: src/utils.js
 export function getBaseWeight() {
-  const equipmentSelect = document.getElementById('equipment');
-  const selectedValue = equipmentSelect.value;
-  if (selectedValue === 'custom') {
-    const customInput = document.getElementById('customWeight');
-    const value = parseFloat(customInput.value);
-    return isNaN(value) ? 0 : value;
-  }
-  return parseFloat(selectedValue) || 0;
+  const customInput = document.getElementById('customWeight');
+  const value = parseFloat(customInput.value);
+  return isNaN(value) ? 0 : value;
 }
 
 // Equipment change handler (index.html)
 function onEquipmentChange() {
   const equipmentSelect = document.getElementById('equipment');
-  const customWeightGroup = document.getElementById('customWeightGroup');
-  const isCustom = equipmentSelect.value === 'custom';
-  customWeightGroup.classList.toggle('hidden', !isCustom);
+  const customWeightInput = document.getElementById('customWeight');
+  const selectedValue = equipmentSelect.value;
+  const isCustom = selectedValue === 'custom';
+
+  if (isCustom) {
+    // Enable input for custom equipment
+    customWeightInput.disabled = false;
+    customWeightInput.value = customWeightInput.value || '0';
+  } else {
+    // Disable input and populate with preset value
+    customWeightInput.disabled = true;
+    customWeightInput.value = selectedValue;
+  }
+
   calculate();
 }
 ```
@@ -212,11 +218,13 @@ const targetPct = e1RM * 100 / totalTargetWeight;
 - Outputs show **plate weight** (for consistency with input)
 - Base weight is automatically added/subtracted during calculations
 
-**Custom Equipment UI**:
-- The custom weight input field (lines 345-349) is hidden by default
-- Shows when user selects "Custom" from equipment dropdown
-- Layout uses `.hidden` class toggle to prevent layout shift (line 373)
+**Base Weight Input UI**:
+- The base weight input field is always visible for all equipment types
+- Displays the base weight value for preset equipment (disabled state)
+- Becomes editable when user selects "Custom" from equipment dropdown
+- Input starts disabled and is populated by `onEquipmentChange()` on page load
 - Custom weight input has its own validation (non-negative, allows 0)
+- Simplifies `getBaseWeight()` to always read from the same input field
 
 ### 5. CSS Custom Properties (Theming)
 
@@ -503,8 +511,9 @@ While automated tests cover all code paths, manually verify these user experienc
 - [ ] Mode toggle switches between weight/reps calculation
 - [ ] Appropriate input field shows/hides based on mode
 - [ ] Equipment dropdown displays all options correctly
-- [ ] Custom weight input shows/hides when selecting/deselecting "Custom"
-- [ ] No layout shift when toggling custom equipment visibility
+- [ ] Base weight input is always visible and displays correct values
+- [ ] Base weight input is disabled for preset equipment (None, Smith Machine, Leg Press)
+- [ ] Base weight input becomes editable when "Custom" is selected
 - [ ] All labels are readable in both light and dark mode
 - [ ] Select dropdown arrow displays correctly in both themes
 - [ ] Layout works on mobile (320px) and desktop (1920px+)
@@ -608,18 +617,15 @@ Note: Tests that calculations work with zero plate weight (bodyweight-style move
 - **Cause**: Misunderstanding of plate weight vs total weight
 - **Solution**: Remember: inputs/outputs are plate weight, but calculations use total weight (plate + base)
 
-**Problem**: Custom equipment input not showing
-- **Cause**: Equipment dropdown not set to "Custom"
-- **Solution**: Select "Custom" option to reveal base weight input field
-
-**Problem**: Layout shifts when toggling equipment
-- **Cause**: Custom weight field not properly hidden with `.hidden` class
-- **Solution**: Ensure `classList.toggle('hidden', condition)` is used (line 373)
+**Problem**: Base weight input not editable
+- **Cause**: Preset equipment is selected (None, Smith Machine, or Leg Press)
+- **Solution**: Base weight input is disabled for preset equipment by design. Select "Custom" to enable editing
 
 ## Version History
 
 Recent significant changes (from git log):
 
+- `d4058c0` - Make equipment base weight always visible (UX enhancement)
 - `d4b52a7` - Merge equipment selection feature (feature)
 - `c4dcb56` - Add smith machine as equipment option (feature)
 - `46ac840` - Fix layout shift when toggling custom equipment (bug fix)
@@ -673,10 +679,22 @@ Recent significant changes (from git log):
 
 ---
 
-**Last Updated**: 2025-12-20
-**Document Version**: 2.0.0
+**Last Updated**: 2025-12-23
+**Document Version**: 2.1.0
 
 ## Changelog
+
+### Version 2.1.0 (2025-12-23)
+- **UX Enhancement**: Updated equipment base weight visibility
+  - Base weight input is now always visible for all equipment types
+  - Input is disabled (read-only) for preset equipment options
+  - Input becomes editable only when "Custom" equipment is selected
+  - Simplified `getBaseWeight()` to always read from the same input field
+  - Updated `onEquipmentChange()` to populate input and toggle disabled state
+  - Removed layout shift issues by eliminating show/hide behavior
+- Updated manual testing checklist to reflect new UI behavior
+- Updated troubleshooting section with current equipment-related guidance
+- Added version history entry for base weight visibility change
 
 ### Version 2.0.0 (2025-12-20)
 - **Major Update**: Added comprehensive testing infrastructure

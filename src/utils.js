@@ -7,14 +7,9 @@
  * @returns {number} Base weight in pounds
  */
 export function getBaseWeight() {
-  const equipmentSelect = document.getElementById('equipment');
-  const selectedValue = equipmentSelect.value;
-  if (selectedValue === 'custom') {
-    const customInput = document.getElementById('customWeight');
-    const value = parseFloat(customInput.value);
-    return isNaN(value) ? 0 : value;
-  }
-  return parseFloat(selectedValue) || 0;
+  const customInput = document.getElementById('customWeight');
+  const value = parseFloat(customInput.value);
+  return isNaN(value) ? 0 : value;
 }
 
 /**

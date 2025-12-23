@@ -14,6 +14,11 @@ describe('getBaseWeight', () => {
     select.innerHTML = '<option value="25" selected>Smith Machine</option>';
     document.body.appendChild(select);
 
+    const customInput = document.createElement('input');
+    customInput.id = 'customWeight';
+    customInput.value = '25';
+    document.body.appendChild(customInput);
+
     expect(getBaseWeight()).toBe(25);
   });
 
@@ -50,6 +55,11 @@ describe('getBaseWeight', () => {
     select.id = 'equipment';
     select.innerHTML = '<option value="" selected>Select</option>';
     document.body.appendChild(select);
+
+    const customInput = document.createElement('input');
+    customInput.id = 'customWeight';
+    customInput.value = '';
+    document.body.appendChild(customInput);
 
     expect(getBaseWeight()).toBe(0);
   });
