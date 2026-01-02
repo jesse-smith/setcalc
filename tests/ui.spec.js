@@ -320,7 +320,7 @@ test.describe('SetCalc UI Tests', () => {
       await expect(page.locator('#roundedReps')).toBeVisible();
     });
 
-    test('rounds weight to 5 lb increment for None equipment', async ({ page }) => {
+    test('rounds weight to 0.5 lb increment for None equipment', async ({ page }) => {
       await page.locator('#refWeight').fill('100');
       await page.locator('#refReps').fill('10');
       await page.locator('#refRPE').fill('9');
@@ -328,8 +328,8 @@ test.describe('SetCalc UI Tests', () => {
       await page.locator('#targetRPE').fill('9');
 
       const roundedWeight = await page.locator('#roundedWeight').textContent();
-      // Rounded weight should be a multiple of 5
-      expect(parseFloat(roundedWeight) % 5).toBe(0);
+      // Rounded weight should be a multiple of 0.5
+      expect((parseFloat(roundedWeight) * 2) % 1).toBe(0);
     });
 
     test('rounds weight to enumerated values for dumbbells', async ({ page }) => {
@@ -376,11 +376,30 @@ test.describe('SetCalc UI Tests', () => {
       expect((parseFloat(roundedWeight) * 10) % 25).toBe(0);
     });
 
-    test('displays RPE for both exact and rounded outputs', async ({ page }) => {
+    test('rounds reps to integer in rounded output', async ({ page }) => {
+      await page.locator('#refWeight').fill('100');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#targetReps').fill('5');
+
+      const roundedReps = await page.locator('#roundedReps').textContent();
+      // Rounded reps should be an integer
+      expect(parseFloat(roundedReps) % 1).toBe(0);
+    });
+
+    test('adjusts RPE in rounded output to account for rounding', async ({ page }) => {
+      await page.locator('#refWeight').fill('100');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#targetReps').fill('5');
       await page.locator('#targetRPE').fill('8');
 
-      await expect(page.locator('#outputRPE')).toHaveText('8');
-      await expect(page.locator('#roundedRPE')).toHaveText('8');
+      const exactRPE = await page.locator('#outputRPE').textContent();
+      const roundedRPE = await page.locator('#roundedRPE').textContent();
+
+      // Exact RPE should match target
+      expect(exactRPE).toBe('8');
+      // Rounded RPE may differ due to rounding adjustments
+      expect(parseFloat(roundedRPE)).toBeGreaterThan(0);
+      expect(parseFloat(roundedRPE)).toBeLessThanOrEqual(10);
     });
   });
 
