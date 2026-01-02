@@ -9,7 +9,7 @@
  * - weights: an array of enumerated available weights (e.g., dumbbells)
  */
 export const EQUIPMENT_CONFIG = {
-  '0': { baseWeight: 0, increment: 5 },           // None
+  '0': { baseWeight: 0, increment: 0.5 },         // None (smallest common plate)
   '25': { baseWeight: 25, increment: 5 },         // Smith Machine
   '167': { baseWeight: 167, increment: 5 },       // 45° Leg Press
   'dumbbells': { baseWeight: 0, weights: [3, 5, 8, 10, 12, 15, 17.5, 20] },  // Dumbbells (x1)
