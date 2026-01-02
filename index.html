@@ -224,14 +224,27 @@ h1 {
   color: white;
 }
 
-.output-section .section-title {
-  color: rgba(255,255,255,0.8);
+.output-row-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 4px;
+  margin-top: 12px;
+}
+
+.output-row-label:first-child {
+  margin-top: 0;
 }
 
 .output-row {
   display: flex;
   padding: 12px 0;
   border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.output-row-last {
+  border-bottom: none;
 }
 
 .output-row span:nth-child(1) {
@@ -270,7 +283,7 @@ h1 {
   <h1>Set Calculator</h1>
   
   <div class="section output-section">
-    <div class="section-title">Updated Set</div>
+    <div class="output-row-label">Exact</div>
     <div class="output-row">
       <span>
       <span class="output-value" id="outputWeight">--</span>
@@ -282,6 +295,21 @@ h1 {
       </span>
       <span>
       <span class="output-value" id="outputRPE">--</span>
+      <span class="output-label">RPE</span>
+      </span>
+    </div>
+    <div class="output-row-label">Rounded</div>
+    <div class="output-row output-row-last">
+      <span>
+      <span class="output-value" id="roundedWeight">--</span>
+      <span class="output-label">lbs</span>
+      </span>
+      <span>
+      <span class="output-value" id="roundedReps">--</span>
+      <span class="output-label">reps</span>
+      </span>
+      <span>
+      <span class="output-value" id="roundedRPE">--</span>
       <span class="output-label">RPE</span>
       </span>
     </div>
@@ -338,14 +366,22 @@ h1 {
           <option value="0">None</option>
           <option value="25">Smith Machine</option>
           <option value="167">45° Leg Press</option>
+          <option value="dumbbells">Dumbbells (x1)</option>
           <option value="custom">Custom</option>
         </select>
         <div class="error-message"></div>
       </div>
+    </div>
+    <div class="input-row">
       <div class="input-group" id="customWeightGroup">
         <label>Base Weight</label>
         <input type="number" id="customWeight" min="0" step="0.5" value="0" disabled>
         <div class="error-message" id="customWeightError"></div>
+      </div>
+      <div class="input-group" id="weightIncrementGroup">
+        <label>Increment</label>
+        <input type="number" id="weightIncrement" min="0" step="0.5" value="5" disabled>
+        <div class="error-message" id="weightIncrementError"></div>
       </div>
     </div>
   </div>
