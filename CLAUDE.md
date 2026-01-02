@@ -274,13 +274,14 @@ const targetPct = e1RM * 100 / totalTargetWeight;
 
 ### Making Changes
 
-1. **Edit source files** - Modify `src/*.js` for logic, `index.html` for UI
-2. **Run tests** - `npm test` to verify changes (100% coverage required)
-3. **Test locally** - Open `index.html` in a browser (ES modules work natively)
-4. **Commit with descriptive messages** - See git history for examples
-5. **Push** - Automated tests run on every commit
-6. **Verify CI passes** - Tests must pass before merging
-7. **Deploy** - Create version tag for production deployment
+1. **Create todo list** - Use TodoWrite tool to plan multi-step tasks
+2. **Edit source files** - Modify `src/*.js` for logic, `index.html` for UI
+3. **Run tests** - `npm test` to verify changes (100% coverage required)
+4. **Test locally** - Open `index.html` in a browser (ES modules work natively)
+5. **Commit after each completed todo** - Create granular commits (see Git Commit Conventions)
+6. **Push** - Automated tests run on every commit
+7. **Verify CI passes** - Tests must pass before merging
+8. **Deploy** - Create version tag for production deployment
 
 ### Local Development
 
@@ -318,6 +319,26 @@ Based on recent history (`git log`):
 
 **Pattern**: Imperative mood, concise, focuses on "what" changed
 
+**Granular Commits with Todo Lists**:
+When using the TodoWrite tool to plan and track tasks:
+- **Create a commit after completing each todo item** (not batched at the end)
+- Each commit should represent one completed todo with a descriptive message
+- This creates a granular git history that allows easy tracking and selective reverting
+- Commit messages should describe the specific todo that was completed
+- Exception: Very trivial consecutive changes (like fixing typos) may be combined
+
+**Example workflow**:
+```bash
+# Todo 1: Add validation for new field
+git add . && git commit -m "Add validation for custom weight input"
+
+# Todo 2: Update tests for validation
+git add . && git commit -m "Update tests for custom weight validation"
+
+# Todo 3: Add UI for new field
+git add . && git commit -m "Add custom weight input field to UI"
+```
+
 ### Branch Strategy
 
 - **Development branches**: Use descriptive names (e.g., `claude/add-claude-documentation-WOkL3`)
@@ -354,6 +375,7 @@ git push origin v1.0.0
 10. **Preserve PWA functionality** - Keep service worker working
 11. **Follow existing patterns** - Match the code style already present
 12. **Run tests before committing** - `npm test` must pass with 100% coverage
+13. **Commit after each todo** - Create granular commits for each completed todo item to enable easy tracking and reverting
 
 ### DON'T ✗
 
@@ -679,10 +701,18 @@ Recent significant changes (from git log):
 
 ---
 
-**Last Updated**: 2025-12-23
-**Document Version**: 2.1.0
+**Last Updated**: 2026-01-02
+**Document Version**: 2.2.0
 
 ## Changelog
+
+### Version 2.2.0 (2026-01-02)
+- **Development Workflow Enhancement**: Added granular commit guidelines
+  - Specified that commits should be made after each completed todo item
+  - Added new "Granular Commits with Todo Lists" subsection to Git Commit Conventions
+  - Updated "Making Changes" workflow to include todo list creation and per-todo commits
+  - Added commit granularity to DO guidelines (#13)
+  - Provides better git history for tracking and selective reverting of changes
 
 ### Version 2.1.0 (2025-12-23)
 - **UX Enhancement**: Updated equipment base weight visibility
