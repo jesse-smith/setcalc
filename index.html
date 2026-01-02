@@ -524,6 +524,19 @@ h1 {
       document.getElementById('outputWeight').textContent = Math.round(outputWeight * 10) / 10;
       document.getElementById('outputRPE').textContent = targetRPE;
 
+      // Calculate rounded weight and corresponding reps
+      const roundedWeight = roundWeight(outputWeight);
+      let roundedReps;
+
+      // Calculate reps corresponding to the rounded weight
+      const totalRoundedWeight = roundedWeight + baseWeight;
+      const roundedPct = e1RM * 100 / totalRoundedWeight;
+      roundedReps = getRepsFromPct(roundedPct, targetRPE);
+
+      document.getElementById('roundedWeight').textContent = Math.round(roundedWeight * 10) / 10;
+      document.getElementById('roundedReps').textContent = Math.round(roundedReps * 10) / 10;
+      document.getElementById('roundedRPE').textContent = targetRPE;
+
       // Sync hidden inputs with their corresponding outputs
       if (mode === 'weight') {
         // targetWeight is hidden, sync it with outputWeight
