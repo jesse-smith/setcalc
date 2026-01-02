@@ -524,18 +524,26 @@ h1 {
       document.getElementById('outputWeight').textContent = Math.round(outputWeight * 10) / 10;
       document.getElementById('outputRPE').textContent = targetRPE;
 
-      // Calculate rounded weight and corresponding reps
+      // Calculate rounded weight, rounded reps, and adjusted RPE
       const roundedWeight = roundWeight(outputWeight);
-      let roundedReps;
 
-      // Calculate reps corresponding to the rounded weight
+      // Calculate exact reps at rounded weight (using target RPE)
       const totalRoundedWeight = roundedWeight + baseWeight;
       const roundedPct = e1RM * 100 / totalRoundedWeight;
-      roundedReps = getRepsFromPct(roundedPct, targetRPE);
+      const exactRepsAtRoundedWeight = getRepsFromPct(roundedPct, targetRPE);
+
+      // Round reps to nearest integer
+      const roundedReps = Math.round(exactRepsAtRoundedWeight);
+
+      // Calculate adjusted RPE to account for reps rounding
+      // effectiveReps = 1 + ln(pct / 100) / 0.0262
+      // adjustedRPE = 10 - (effectiveReps - roundedReps)
+      const effectiveReps = 1 + Math.log(roundedPct / 100) / 0.0262;
+      const adjustedRPE = Math.round((10 - (effectiveReps - roundedReps)) * 10) / 10;
 
       document.getElementById('roundedWeight').textContent = Math.round(roundedWeight * 10) / 10;
-      document.getElementById('roundedReps').textContent = Math.round(roundedReps * 10) / 10;
-      document.getElementById('roundedRPE').textContent = targetRPE;
+      document.getElementById('roundedReps').textContent = roundedReps;
+      document.getElementById('roundedRPE').textContent = adjustedRPE;
 
       // Sync hidden inputs with their corresponding outputs
       if (mode === 'weight') {
