@@ -388,8 +388,8 @@ h1 {
 
   <script type="module">
     import { getPct, getRepsFromPct } from './src/calc.js';
-    import { validateReps, validateWeight, validateRPE, clearValidation } from './src/validation.js';
-    import { getBaseWeight, clearOutputs } from './src/utils.js';
+    import { validateReps, validateWeight, validateRPE, validateIncrement, clearValidation } from './src/validation.js';
+    import { getBaseWeight, clearOutputs, roundWeight, hasEnumeratedWeights, EQUIPMENT_CONFIG } from './src/utils.js';
 
     let mode = 'weight'; // 'weight' = calculate weight (user inputs reps), 'reps' = calculate reps (user inputs weight)
 
@@ -397,18 +397,49 @@ h1 {
     function onEquipmentChange() {
       const equipmentSelect = document.getElementById('equipment');
       const customWeightInput = document.getElementById('customWeight');
+      const incrementInput = document.getElementById('weightIncrement');
       const selectedValue = equipmentSelect.value;
       const isCustom = selectedValue === 'custom';
+      const config = EQUIPMENT_CONFIG[selectedValue];
 
+      // Handle base weight input
       if (isCustom) {
         // Enable input for custom equipment
         customWeightInput.disabled = false;
         customWeightInput.value = customWeightInput.value || '0';
-      } else {
+      } else if (config) {
         // Disable input and populate with preset value
         customWeightInput.disabled = true;
-        customWeightInput.value = selectedValue;
+        customWeightInput.value = config.baseWeight;
+      } else {
+        customWeightInput.disabled = true;
+        customWeightInput.value = '0';
       }
+
+      // Handle weight increment input
+      if (config && config.weights) {
+        // Enumerated weights (e.g., dumbbells) - show em dash, disable
+        incrementInput.disabled = true;
+        incrementInput.value = '';
+        incrementInput.placeholder = '—';
+      } else if (isCustom) {
+        // Custom equipment - enable editing
+        incrementInput.disabled = false;
+        incrementInput.placeholder = '';
+        incrementInput.value = incrementInput.value || '5';
+      } else if (config) {
+        // Preset equipment with increment
+        incrementInput.disabled = true;
+        incrementInput.placeholder = '';
+        incrementInput.value = config.increment;
+      } else {
+        incrementInput.disabled = true;
+        incrementInput.placeholder = '';
+        incrementInput.value = '5';
+      }
+
+      // Clear validation on increment field when switching equipment
+      clearValidation('weightIncrement');
 
       calculate();
     }
