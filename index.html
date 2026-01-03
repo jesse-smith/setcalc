@@ -237,6 +237,18 @@ h1 {
   margin-top: 0;
 }
 
+.output-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.output-label-row .output-row-label {
+  margin: 0;
+}
+
 .output-row {
   display: flex;
   padding: 12px 0;
@@ -250,9 +262,8 @@ h1 {
 .rounding-toggle {
   display: flex;
   background: rgba(255,255,255,0.15);
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 2px;
-  margin-top: 12px;
   position: relative;
 }
 
@@ -264,7 +275,7 @@ h1 {
   width: calc(33.333% - 1.333px);
   height: calc(100% - 4px);
   background: rgba(255,255,255,0.25);
-  border-radius: 14px;
+  border-radius: 10px;
   transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   z-index: 0;
 }
@@ -279,10 +290,10 @@ h1 {
 
 .rounding-toggle-btn {
   flex: 1;
-  padding: 4px 8px;
+  padding: 3px 10px;
   border: none;
   background: transparent;
-  border-radius: 14px;
+  border-radius: 10px;
   font-size: 11px;
   cursor: pointer;
   transition: color 0.2s;
@@ -358,7 +369,14 @@ h1 {
       <span class="output-label">RPE</span>
       </span>
     </div>
-    <div class="output-row-label">Rounded</div>
+    <div class="output-label-row">
+      <div class="output-row-label">Achievable</div>
+      <div class="rounding-toggle mode-closest" id="roundingToggle">
+        <button class="rounding-toggle-btn" id="roundDown" onclick="setRoundingMode('down')">Down</button>
+        <button class="rounding-toggle-btn active" id="roundClosest" onclick="setRoundingMode('closest')">Closest</button>
+        <button class="rounding-toggle-btn" id="roundUp" onclick="setRoundingMode('up')">Up</button>
+      </div>
+    </div>
     <div class="output-row output-row-last">
       <span>
       <span class="output-value" id="roundedWeight">--</span>
@@ -372,11 +390,6 @@ h1 {
       <span class="output-value" id="roundedRPE">--</span>
       <span class="output-label">RPE</span>
       </span>
-    </div>
-    <div class="rounding-toggle mode-closest" id="roundingToggle">
-      <button class="rounding-toggle-btn" id="roundDown" onclick="setRoundingMode('down')">Down</button>
-      <button class="rounding-toggle-btn active" id="roundClosest" onclick="setRoundingMode('closest')">Closest</button>
-      <button class="rounding-toggle-btn" id="roundUp" onclick="setRoundingMode('up')">Up</button>
     </div>
   </div>
   
