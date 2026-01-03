@@ -598,21 +598,26 @@ h1 {
         outputWeight = targetWeight; // Already plate weight
       }
 
-      document.getElementById('outputReps').textContent = Math.round(outputReps * 10) / 10;
-      document.getElementById('outputWeight').textContent = Math.round(outputWeight * 10) / 10;
+      // Round outputs for display (and use these for further calculations)
+      const displayWeight = Math.round(outputWeight * 10) / 10;
+      const displayReps = Math.round(outputReps * 10) / 10;
+
+      document.getElementById('outputReps').textContent = displayReps;
+      document.getElementById('outputWeight').textContent = displayWeight;
       document.getElementById('outputRPE').textContent = targetRPE;
 
       // Calculate rounded weight based on rounding mode
+      // Use displayWeight so rounded values are consistent with what user sees
       let roundedWeight;
 
       if (roundingMode === 'down') {
-        roundedWeight = roundWeightDown(outputWeight);
+        roundedWeight = roundWeightDown(displayWeight);
       } else if (roundingMode === 'up') {
-        roundedWeight = roundWeightUp(outputWeight);
+        roundedWeight = roundWeightUp(displayWeight);
       } else {
         // 'closest' mode: choose the direction that gives reps closest to exact
-        const weightDown = roundWeightDown(outputWeight);
-        const weightUp = roundWeightUp(outputWeight);
+        const weightDown = roundWeightDown(displayWeight);
+        const weightUp = roundWeightUp(displayWeight);
 
         // Calculate integer reps for each rounded weight
         const totalDown = weightDown + baseWeight;
@@ -623,9 +628,9 @@ h1 {
         const pctUp = e1RM * 100 / totalUp;
         const repsUp = Math.round(getRepsFromPct(pctUp, targetRPE));
 
-        // Choose the weight that gives reps closest to outputReps
-        const diffDown = Math.abs(repsDown - outputReps);
-        const diffUp = Math.abs(repsUp - outputReps);
+        // Choose the weight that gives reps closest to displayReps
+        const diffDown = Math.abs(repsDown - displayReps);
+        const diffUp = Math.abs(repsUp - displayReps);
 
         roundedWeight = diffDown <= diffUp ? weightDown : weightUp;
       }
