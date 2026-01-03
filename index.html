@@ -632,7 +632,25 @@ h1 {
         const diffDown = Math.abs(repsDown - displayReps);
         const diffUp = Math.abs(repsUp - displayReps);
 
-        roundedWeight = diffDown <= diffUp ? weightDown : weightUp;
+        if (diffDown < diffUp) {
+          roundedWeight = weightDown;
+        } else if (diffUp < diffDown) {
+          roundedWeight = weightUp;
+        } else {
+          // Reps are equal - use RPE as tiebreaker
+          // Calculate adjusted RPE for each option
+          const effectiveRepsDown = 1 + Math.log(pctDown / 100) / 0.0262;
+          const rpeDown = 10 - (effectiveRepsDown - repsDown);
+
+          const effectiveRepsUp = 1 + Math.log(pctUp / 100) / 0.0262;
+          const rpeUp = 10 - (effectiveRepsUp - repsUp);
+
+          // Choose the weight with RPE closer to target
+          const rpeDiffDown = Math.abs(rpeDown - targetRPE);
+          const rpeDiffUp = Math.abs(rpeUp - targetRPE);
+
+          roundedWeight = rpeDiffDown <= rpeDiffUp ? weightDown : weightUp;
+        }
       }
 
       // Calculate exact reps at rounded weight (using target RPE)
