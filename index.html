@@ -224,14 +224,102 @@ h1 {
   color: white;
 }
 
-.output-section .section-title {
-  color: rgba(255,255,255,0.8);
+.output-row-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 4px;
+  margin-top: 12px;
+}
+
+.output-row-label:first-child {
+  margin-top: 0;
+}
+
+.output-label-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.output-label-row .output-row-label {
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .output-row {
   display: flex;
   padding: 12px 0;
   border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.output-row-last {
+  border-bottom: none;
+}
+
+.rounding-toggle {
+  display: flex;
+  flex: 1;
+  max-width: 720px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 2px;
+  position: relative;
+}
+
+.rounding-toggle::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc((100% - 4px) / 3);
+  height: calc(100% - 4px);
+  background: rgba(255,255,255,0.25);
+  border-radius: 10px;
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  z-index: 0;
+}
+
+.rounding-toggle.mode-closest::before {
+  transform: translateX(100%);
+}
+
+.rounding-toggle.mode-up::before {
+  transform: translateX(200%);
+}
+
+.rounding-toggle-btn {
+  flex: 1;
+  padding: 3px 0;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 0.2s;
+  color: rgba(255,255,255,0.6);
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+.rounding-toggle-btn:active {
+  background: transparent;
+}
+
+.rounding-toggle-btn:focus {
+  outline: none;
+}
+
+.rounding-toggle-btn.active {
+  color: white;
 }
 
 .output-row span:nth-child(1) {
@@ -270,7 +358,7 @@ h1 {
   <h1>Set Calculator</h1>
   
   <div class="section output-section">
-    <div class="section-title">Updated Set</div>
+    <div class="output-row-label">Exact</div>
     <div class="output-row">
       <span>
       <span class="output-value" id="outputWeight">--</span>
@@ -282,6 +370,28 @@ h1 {
       </span>
       <span>
       <span class="output-value" id="outputRPE">--</span>
+      <span class="output-label">RPE</span>
+      </span>
+    </div>
+    <div class="output-label-row">
+      <div class="output-row-label">Rounded</div>
+      <div class="rounding-toggle mode-closest" id="roundingToggle">
+        <button class="rounding-toggle-btn" id="roundDown" onclick="setRoundingMode('down')">Down</button>
+        <button class="rounding-toggle-btn active" id="roundClosest" onclick="setRoundingMode('closest')">Closest</button>
+        <button class="rounding-toggle-btn" id="roundUp" onclick="setRoundingMode('up')">Up</button>
+      </div>
+    </div>
+    <div class="output-row output-row-last">
+      <span>
+      <span class="output-value" id="roundedWeight">--</span>
+      <span class="output-label">lbs</span>
+      </span>
+      <span>
+      <span class="output-value" id="roundedReps">--</span>
+      <span class="output-label">reps</span>
+      </span>
+      <span>
+      <span class="output-value" id="roundedRPE">--</span>
       <span class="output-label">RPE</span>
       </span>
     </div>
@@ -338,41 +448,93 @@ h1 {
           <option value="0">None</option>
           <option value="25">Smith Machine</option>
           <option value="167">45° Leg Press</option>
+          <option value="dumbbells">Dumbbells (x1)</option>
           <option value="custom">Custom</option>
         </select>
         <div class="error-message"></div>
       </div>
+    </div>
+    <div class="input-row">
       <div class="input-group" id="customWeightGroup">
         <label>Base Weight</label>
         <input type="number" id="customWeight" min="0" step="0.5" value="0" disabled>
         <div class="error-message" id="customWeightError"></div>
+      </div>
+      <div class="input-group" id="weightIncrementGroup">
+        <label>Increment</label>
+        <input type="number" id="weightIncrement" min="0" step="0.5" value="5" disabled>
+        <div class="error-message" id="weightIncrementError"></div>
       </div>
     </div>
   </div>
 
   <script type="module">
     import { getPct, getRepsFromPct } from './src/calc.js';
-    import { validateReps, validateWeight, validateRPE, clearValidation } from './src/validation.js';
-    import { getBaseWeight, clearOutputs } from './src/utils.js';
+    import { validateReps, validateWeight, validateRPE, validateIncrement, clearValidation } from './src/validation.js';
+    import { getBaseWeight, clearOutputs, roundWeight, roundWeightDown, roundWeightUp, hasEnumeratedWeights, EQUIPMENT_CONFIG } from './src/utils.js';
 
     let mode = 'weight'; // 'weight' = calculate weight (user inputs reps), 'reps' = calculate reps (user inputs weight)
+    let roundingMode = 'closest'; // 'down', 'closest', 'up'
+
+    // Handle rounding mode selection
+    window.setRoundingMode = function(newMode) {
+      roundingMode = newMode;
+      const toggle = document.getElementById('roundingToggle');
+      toggle.classList.remove('mode-down', 'mode-closest', 'mode-up');
+      toggle.classList.add('mode-' + newMode);
+      document.getElementById('roundDown').classList.toggle('active', newMode === 'down');
+      document.getElementById('roundClosest').classList.toggle('active', newMode === 'closest');
+      document.getElementById('roundUp').classList.toggle('active', newMode === 'up');
+      calculate();
+    }
 
     // Handle equipment selection change
     function onEquipmentChange() {
       const equipmentSelect = document.getElementById('equipment');
       const customWeightInput = document.getElementById('customWeight');
+      const incrementInput = document.getElementById('weightIncrement');
       const selectedValue = equipmentSelect.value;
       const isCustom = selectedValue === 'custom';
+      const config = EQUIPMENT_CONFIG[selectedValue];
 
+      // Handle base weight input
       if (isCustom) {
         // Enable input for custom equipment
         customWeightInput.disabled = false;
         customWeightInput.value = customWeightInput.value || '0';
-      } else {
+      } else if (config) {
         // Disable input and populate with preset value
         customWeightInput.disabled = true;
-        customWeightInput.value = selectedValue;
+        customWeightInput.value = config.baseWeight;
+      } else {
+        customWeightInput.disabled = true;
+        customWeightInput.value = '0';
       }
+
+      // Handle weight increment input
+      if (config && config.weights) {
+        // Enumerated weights (e.g., dumbbells) - show em dash, disable
+        incrementInput.disabled = true;
+        incrementInput.value = '';
+        incrementInput.placeholder = '—';
+      } else if (isCustom) {
+        // Custom equipment - enable editing
+        incrementInput.disabled = false;
+        incrementInput.placeholder = '';
+        incrementInput.value = incrementInput.value || '5';
+      } else if (config) {
+        // Preset equipment with increment
+        incrementInput.disabled = true;
+        incrementInput.placeholder = '';
+        incrementInput.value = config.increment;
+      } else {
+        incrementInput.disabled = true;
+        incrementInput.placeholder = '';
+        incrementInput.value = '5';
+      }
+
+      // Clear validation on increment field when switching equipment
+      clearValidation('weightIncrement');
 
       calculate();
     }
@@ -453,9 +615,87 @@ h1 {
         outputWeight = targetWeight; // Already plate weight
       }
 
-      document.getElementById('outputReps').textContent = Math.round(outputReps * 10) / 10;
-      document.getElementById('outputWeight').textContent = Math.round(outputWeight * 10) / 10;
+      // Round outputs for display (and use these for further calculations)
+      const displayWeight = Math.round(outputWeight * 10) / 10;
+      const displayReps = Math.round(outputReps * 10) / 10;
+
+      document.getElementById('outputReps').textContent = displayReps;
+      document.getElementById('outputWeight').textContent = displayWeight;
       document.getElementById('outputRPE').textContent = targetRPE;
+
+      // Calculate rounded weight based on rounding mode
+      // Use displayWeight so rounded values are consistent with what user sees
+      let roundedWeight;
+
+      if (roundingMode === 'down') {
+        roundedWeight = roundWeightDown(displayWeight);
+      } else if (roundingMode === 'up') {
+        roundedWeight = roundWeightUp(displayWeight);
+      } else {
+        // 'closest' mode: choose the direction that gives reps closest to exact
+        const weightDown = roundWeightDown(displayWeight);
+        const weightUp = roundWeightUp(displayWeight);
+
+        // Calculate integer reps for each rounded weight
+        const totalDown = weightDown + baseWeight;
+        const pctDown = e1RM * 100 / totalDown;
+        const repsDown = Math.round(getRepsFromPct(pctDown, targetRPE));
+
+        const totalUp = weightUp + baseWeight;
+        const pctUp = e1RM * 100 / totalUp;
+        const repsUp = Math.round(getRepsFromPct(pctUp, targetRPE));
+
+        // Choose the weight that gives reps closest to displayReps
+        const diffDown = Math.abs(repsDown - displayReps);
+        const diffUp = Math.abs(repsUp - displayReps);
+
+        if (diffDown < diffUp) {
+          roundedWeight = weightDown;
+        } else if (diffUp < diffDown) {
+          roundedWeight = weightUp;
+        } else {
+          // Reps are equal - use RPE as tiebreaker
+          // Calculate adjusted RPE for each option
+          const effectiveRepsDown = 1 + Math.log(pctDown / 100) / 0.0262;
+          const rpeDown = 10 - (effectiveRepsDown - repsDown);
+
+          const effectiveRepsUp = 1 + Math.log(pctUp / 100) / 0.0262;
+          const rpeUp = 10 - (effectiveRepsUp - repsUp);
+
+          // Choose the weight with RPE closer to target
+          const rpeDiffDown = Math.abs(rpeDown - targetRPE);
+          const rpeDiffUp = Math.abs(rpeUp - targetRPE);
+
+          if (rpeDiffDown < rpeDiffUp) {
+            roundedWeight = weightDown;
+          } else if (rpeDiffUp < rpeDiffDown) {
+            roundedWeight = weightUp;
+          } else {
+            // RPE also equal - use weight closest to exact
+            const weightDiffDown = Math.abs(weightDown - displayWeight);
+            const weightDiffUp = Math.abs(weightUp - displayWeight);
+            roundedWeight = weightDiffDown <= weightDiffUp ? weightDown : weightUp;
+          }
+        }
+      }
+
+      // Calculate exact reps at rounded weight (using target RPE)
+      const totalRoundedWeight = roundedWeight + baseWeight;
+      const roundedPct = e1RM * 100 / totalRoundedWeight;
+      const exactRepsAtRoundedWeight = getRepsFromPct(roundedPct, targetRPE);
+
+      // Round reps to nearest integer
+      const roundedReps = Math.round(exactRepsAtRoundedWeight);
+
+      // Calculate adjusted RPE to account for reps rounding
+      // effectiveReps = 1 + ln(pct / 100) / 0.0262
+      // adjustedRPE = 10 - (effectiveReps - roundedReps)
+      const effectiveReps = 1 + Math.log(roundedPct / 100) / 0.0262;
+      const adjustedRPE = Math.round((10 - (effectiveReps - roundedReps)) * 10) / 10;
+
+      document.getElementById('roundedWeight').textContent = Math.round(roundedWeight * 10) / 10;
+      document.getElementById('roundedReps').textContent = roundedReps;
+      document.getElementById('roundedRPE').textContent = adjustedRPE;
 
       // Sync hidden inputs with their corresponding outputs
       if (mode === 'weight') {

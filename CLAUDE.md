@@ -10,8 +10,12 @@
 - Calculate target weight from target reps and RPE
 - Calculate target reps from target weight and RPE
 - Equipment selection with automatic base weight adjustment
-  - Preset options: None, Smith Machine, 45° Leg Press
+  - Preset options: None, Smith Machine, 45° Leg Press, Dumbbells
   - Custom equipment base weight option
+- Weight rounding to achievable values based on equipment
+  - Displays both exact and rounded outputs
+  - Configurable rounding direction (Down/Closest/Up)
+  - Automatic RPE adjustment to compensate for rounded reps
 - Real-time input validation with user feedback
 - Progressive Web App (PWA) with offline support
 - Responsive design with light/dark mode support
@@ -189,10 +193,11 @@ function onEquipmentChange() {
 ```
 
 **Equipment Options** (index.html):
-- **None** (value="0"): No base weight (barbell exercises where bar weight is loaded as plates)
-- **Smith Machine** (value="25"): 25 lbs base weight (typical smith machine bar)
-- **45° Leg Press** (value="167"): 167 lbs base weight (sled weight)
-- **Custom** (value="custom"): User-specified base weight via additional input field
+- **None** (value="0"): No base weight, 0.5 lb increments
+- **Smith Machine** (value="25"): 25 lbs base weight, 5 lb increments
+- **45° Leg Press** (value="167"): 167 lbs base weight, 5 lb increments
+- **Dumbbells** (value="dumbbells"): No base weight, enumerated weights [3, 5, 8, 10, 12, 15, 17.5, 20]
+- **Custom** (value="custom"): User-specified base weight and increment
 
 **Weight Calculation with Equipment**:
 ```javascript
@@ -226,7 +231,53 @@ const targetPct = e1RM * 100 / totalTargetWeight;
 - Custom weight input has its own validation (non-negative, allows 0)
 - Simplifies `getBaseWeight()` to always read from the same input field
 
-### 5. CSS Custom Properties (Theming)
+### 5. Weight Rounding
+
+The app rounds calculated weights to achievable values based on equipment configuration:
+
+**Equipment Configuration** (src/utils.js):
+```javascript
+export const EQUIPMENT_CONFIG = {
+  '0': { baseWeight: 0, increment: 0.5 },      // None - 0.5 lb plates
+  '25': { baseWeight: 25, increment: 5 },      // Smith Machine
+  '167': { baseWeight: 167, increment: 5 },    // 45° Leg Press
+  'dumbbells': { baseWeight: 0, weights: [3, 5, 8, 10, 12, 15, 17.5, 20] },
+  'custom': { baseWeight: 0, increment: 5 }    // Default for custom
+};
+```
+
+**Rounding Functions** (src/utils.js):
+- `roundWeight(weight)` - Round to nearest achievable weight
+- `roundWeightDown(weight)` - Round down to achievable weight
+- `roundWeightUp(weight)` - Round up to achievable weight
+- Handles both increment-based (e.g., 5 lb plates) and enumerated weights (dumbbells)
+
+**Rounding Direction Toggle**:
+- Three modes: Down, Closest (default), Up
+- Located beside the "Rounded" label in the output section
+- Uses sliding pill animation similar to mode toggle
+
+**"Closest" Mode Logic**:
+Uses a multi-step tiebreaker when choosing between round-down and round-up:
+1. **Reps comparison** - Choose weight that gives reps closest to exact
+2. **RPE comparison** - If reps are equal, choose weight with RPE closer to target
+3. **Weight proximity** - If RPE also equal, choose weight closest to exact calculated value
+
+**Adjusted RPE**:
+When reps are rounded to integers, the RPE is adjusted to compensate:
+```javascript
+// effectiveReps = 1 + ln(pct / 100) / 0.0262
+// adjustedRPE = 10 - (effectiveReps - roundedReps)
+```
+This ensures the rounded output represents an equivalent training stimulus.
+
+**Weight Increment Input**:
+- Visible for all equipment types alongside base weight
+- Disabled for preset equipment, shows configured increment
+- Editable when "Custom" equipment is selected
+- Shows "—" placeholder for enumerated weights (dumbbells)
+
+### 6. CSS Custom Properties (Theming)
 
 ```css
 /* Location: index.html:19-53 */
@@ -253,7 +304,7 @@ const targetPct = e1RM * 100 / totalTargetWeight;
 - Consistent styling with text inputs
 - Full theme support (light/dark mode)
 
-### 6. Service Worker (PWA)
+### 7. Service Worker (PWA)
 
 ```javascript
 // Location: index.html:567-594
@@ -464,12 +515,12 @@ git push origin v1.0.0
 The project has comprehensive automated tests with **100% code coverage** enforced by CI:
 
 **Test Suites**:
-- **Unit Tests** (`tests/*.test.js`) - 37 tests covering all functions
+- **Unit Tests** (`tests/*.test.js`) - 92 tests covering all functions
   - `calc.test.js` - Berger equation calculations (5 tests)
-  - `validation.test.js` - Input validation logic (27 tests)
-  - `utils.test.js` - Utility functions (5 tests)
+  - `validation.test.js` - Input validation logic (33 tests)
+  - `utils.test.js` - Utility functions including rounding (54 tests)
 - **UI Tests** (`tests/ui.spec.js`) - End-to-end browser testing
-  - User workflows, validation states, equipment selection, edge cases
+  - User workflows, validation states, equipment selection, weight rounding, edge cases
 
 **Running Tests Locally**:
 ```bash
@@ -532,14 +583,27 @@ While automated tests cover all code paths, manually verify these user experienc
 **UI/UX**:
 - [ ] Mode toggle switches between weight/reps calculation
 - [ ] Appropriate input field shows/hides based on mode
-- [ ] Equipment dropdown displays all options correctly
+- [ ] Equipment dropdown displays all options correctly (including Dumbbells)
 - [ ] Base weight input is always visible and displays correct values
-- [ ] Base weight input is disabled for preset equipment (None, Smith Machine, Leg Press)
-- [ ] Base weight input becomes editable when "Custom" is selected
+- [ ] Base weight input is disabled for preset equipment
+- [ ] Weight increment input shows correct values per equipment
+- [ ] Increment input shows "—" for dumbbells (enumerated weights)
+- [ ] Base weight and increment become editable when "Custom" is selected
 - [ ] All labels are readable in both light and dark mode
 - [ ] Select dropdown arrow displays correctly in both themes
 - [ ] Layout works on mobile (320px) and desktop (1920px+)
 - [ ] Touch targets are at least 44px for mobile
+
+**Weight Rounding**:
+- [ ] Both "Exact" and "Rounded" outputs display correctly
+- [ ] Rounding toggle (Down/Closest/Up) works and animates smoothly
+- [ ] "Down" rounds weight down to nearest achievable value
+- [ ] "Up" rounds weight up to nearest achievable value
+- [ ] "Closest" chooses weight giving reps closest to exact
+- [ ] Rounded reps display as integers
+- [ ] Adjusted RPE compensates for reps rounding
+- [ ] Dumbbells round to enumerated weights correctly
+- [ ] Custom increment rounding works as expected
 
 **PWA**:
 - [ ] App loads offline after first visit
@@ -647,6 +711,17 @@ Note: Tests that calculations work with zero plate weight (bodyweight-style move
 
 Recent significant changes (from git log):
 
+- `4db0dac` - Revert rounding rename and increase max-width (UI tweak)
+- `4c65327` - Fix rounding toggle to fill available width with centered text (UI)
+- `311b179` - Rename Rounded to Achievable and move toggle beside label (UI)
+- `29a9051` - Add weight proximity as final tiebreaker in closest rounding (feature)
+- `92adada` - Use RPE as tiebreaker when closest rounding produces equal reps (feature)
+- `206e5ff` - Fix rounding using displayed weight instead of raw calculated value (bug fix)
+- `2ea7e4c` - Add rounding direction toggle (Down/Closest/Up) (feature)
+- `bf2c9bf` - Round reps to integer and adjust RPE in rounded output (feature)
+- `174c57f` - Change None equipment increment to 0.5 lb (feature)
+- `9a71a21` - Update calculate() to compute rounded weight and corresponding reps (feature)
+- `78bfe3c` - Add rounding utility functions and equipment configuration (feature)
 - `d4058c0` - Make equipment base weight always visible (UX enhancement)
 - `d4b52a7` - Merge equipment selection feature (feature)
 - `c4dcb56` - Add smith machine as equipment option (feature)
@@ -701,10 +776,28 @@ Recent significant changes (from git log):
 
 ---
 
-**Last Updated**: 2026-01-02
-**Document Version**: 2.2.0
+**Last Updated**: 2026-01-03
+**Document Version**: 2.3.0
 
 ## Changelog
+
+### Version 2.3.0 (2026-01-03)
+- **Major Feature**: Added weight rounding system
+  - Displays both "Exact" and "Rounded" outputs in the output section
+  - Equipment-based rounding: increment-based (plates) or enumerated (dumbbells)
+  - Added EQUIPMENT_CONFIG in src/utils.js with base weight and rounding info
+  - Added rounding direction toggle (Down/Closest/Up) with sliding pill animation
+  - "Closest" mode uses multi-step tiebreaker: reps → RPE → weight proximity
+  - Rounded reps display as integers with adjusted RPE to compensate
+  - Added Dumbbells equipment option with enumerated weights
+  - Changed "None" equipment to use 0.5 lb increments
+  - Added weight increment input field (disabled for presets, editable for custom)
+- Updated Key Features to include weight rounding
+- Added new section "5. Weight Rounding" documenting the feature
+- Updated Equipment Options to include Dumbbells and rounding increments
+- Updated test counts (now 92 tests total)
+- Added Weight Rounding section to manual verification checklist
+- Updated version history with rounding-related commits
 
 ### Version 2.2.0 (2026-01-02)
 - **Development Workflow Enhancement**: Added granular commit guidelines

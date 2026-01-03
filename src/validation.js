@@ -117,3 +117,23 @@ export function validateCustomWeight(inputId) {
   clearValidation(inputId);
   return value;
 }
+
+/**
+ * Validate weight increment input (must be > 0)
+ * @param {string} inputId - ID of the input element
+ * @returns {number|null} Validated value or null if invalid
+ */
+export function validateIncrement(inputId) {
+  const input = document.getElementById(inputId);
+  if (input.value === '') {
+    setEmpty(inputId);
+    return null;
+  }
+  const value = parseFloat(input.value);
+  if (isNaN(value) || value <= 0) {
+    setInvalid(inputId, 'Increment must be positive');
+    return null;
+  }
+  clearValidation(inputId);
+  return value;
+}

@@ -6,7 +6,8 @@ import {
   validateReps,
   validateWeight,
   validateRPE,
-  validateCustomWeight
+  validateCustomWeight,
+  validateIncrement
 } from '../src/validation.js';
 
 function createMockInput(id, value = '') {
@@ -193,5 +194,41 @@ describe('validateCustomWeight', () => {
   test('rejects non-numeric input', () => {
     createMockInput('custom', 'custom');
     expect(validateCustomWeight('custom')).toBeNull();
+  });
+});
+
+describe('validateIncrement', () => {
+  beforeEach(cleanup);
+
+  test('returns null for empty input', () => {
+    createMockInput('increment', '');
+    expect(validateIncrement('increment')).toBeNull();
+  });
+
+  test('returns value for valid input', () => {
+    createMockInput('increment', '5');
+    expect(validateIncrement('increment')).toBe(5);
+  });
+
+  test('accepts fractional increment', () => {
+    createMockInput('increment', '2.5');
+    expect(validateIncrement('increment')).toBe(2.5);
+  });
+
+  test('rejects 0 increment', () => {
+    const { errorDiv } = createMockInput('increment', '0');
+    expect(validateIncrement('increment')).toBeNull();
+    expect(errorDiv.textContent).toBe('Increment must be positive');
+  });
+
+  test('rejects negative increment', () => {
+    const { errorDiv } = createMockInput('increment', '-5');
+    expect(validateIncrement('increment')).toBeNull();
+    expect(errorDiv.textContent).toBe('Increment must be positive');
+  });
+
+  test('rejects non-numeric input', () => {
+    createMockInput('increment', 'abc');
+    expect(validateIncrement('increment')).toBeNull();
   });
 });

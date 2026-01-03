@@ -229,6 +229,11 @@ test.describe('SetCalc UI Tests', () => {
       await expect(page.locator('#customWeight')).toBeVisible();
     });
 
+    test('weight increment input is always visible', async ({ page }) => {
+      await expect(page.locator('#weightIncrementGroup')).toBeVisible();
+      await expect(page.locator('#weightIncrement')).toBeVisible();
+    });
+
     test('enables custom weight input when custom is selected', async ({ page }) => {
       // Input should be disabled initially (for preset equipment)
       await expect(page.locator('#customWeight')).toBeDisabled();
@@ -239,12 +244,35 @@ test.describe('SetCalc UI Tests', () => {
       await expect(page.locator('#customWeight')).toBeEnabled();
     });
 
+    test('enables increment input when custom is selected', async ({ page }) => {
+      // Increment should be disabled initially (for preset equipment)
+      await expect(page.locator('#weightIncrement')).toBeDisabled();
+
+      await page.locator('#equipment').selectOption('custom');
+
+      // Increment should now be enabled
+      await expect(page.locator('#weightIncrement')).toBeEnabled();
+    });
+
     test('disables custom weight input when switching away from custom', async ({ page }) => {
       await page.locator('#equipment').selectOption('custom');
       await expect(page.locator('#customWeight')).toBeEnabled();
 
       await page.locator('#equipment').selectOption('0');
       await expect(page.locator('#customWeight')).toBeDisabled();
+    });
+
+    test('shows increment value for preset equipment', async ({ page }) => {
+      await page.locator('#equipment').selectOption('25'); // Smith Machine
+      await expect(page.locator('#weightIncrement')).toHaveValue('5');
+      await expect(page.locator('#weightIncrement')).toBeDisabled();
+    });
+
+    test('shows placeholder for dumbbells (enumerated weights)', async ({ page }) => {
+      await page.locator('#equipment').selectOption('dumbbells');
+      await expect(page.locator('#weightIncrement')).toHaveValue('');
+      await expect(page.locator('#weightIncrement')).toHaveAttribute('placeholder', '—');
+      await expect(page.locator('#weightIncrement')).toBeDisabled();
     });
 
     test('updates calculation when equipment changes', async ({ page }) => {
@@ -274,13 +302,158 @@ test.describe('SetCalc UI Tests', () => {
     });
 
     test('handles all preset equipment options', async ({ page }) => {
-      const options = ['0', '25', '167'];
+      const options = ['0', '25', '167', 'dumbbells'];
 
       for (const value of options) {
         await page.locator('#equipment').selectOption(value);
         const output = await page.locator('#outputWeight').textContent();
         expect(output).not.toBe('—');
       }
+    });
+  });
+
+  test.describe('Weight Rounding', () => {
+    test('displays both exact and rounded outputs', async ({ page }) => {
+      await expect(page.locator('#outputWeight')).toBeVisible();
+      await expect(page.locator('#roundedWeight')).toBeVisible();
+      await expect(page.locator('#outputReps')).toBeVisible();
+      await expect(page.locator('#roundedReps')).toBeVisible();
+    });
+
+    test('rounds weight to 0.5 lb increment for None equipment', async ({ page }) => {
+      await page.locator('#refWeight').fill('100');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#refRPE').fill('9');
+      await page.locator('#targetReps').fill('5');
+      await page.locator('#targetRPE').fill('9');
+
+      const roundedWeight = await page.locator('#roundedWeight').textContent();
+      // Rounded weight should be a multiple of 0.5
+      expect((parseFloat(roundedWeight) * 2) % 1).toBe(0);
+    });
+
+    test('rounds weight to enumerated values for dumbbells', async ({ page }) => {
+      await page.locator('#equipment').selectOption('dumbbells');
+      await page.locator('#refWeight').fill('10');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#refRPE').fill('9');
+      await page.locator('#targetReps').fill('5');
+      await page.locator('#targetRPE').fill('9');
+
+      const roundedWeight = await page.locator('#roundedWeight').textContent();
+      const validWeights = [3, 5, 8, 10, 12, 15, 17.5, 20];
+      expect(validWeights).toContain(parseFloat(roundedWeight));
+    });
+
+    test('calculates corresponding reps for rounded weight', async ({ page }) => {
+      await page.locator('#refWeight').fill('100');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#targetReps').fill('5');
+
+      const exactReps = await page.locator('#outputReps').textContent();
+      const roundedReps = await page.locator('#roundedReps').textContent();
+
+      // If weights differ, reps should also differ
+      const exactWeight = await page.locator('#outputWeight').textContent();
+      const roundedWeight = await page.locator('#roundedWeight').textContent();
+
+      if (exactWeight !== roundedWeight) {
+        expect(exactReps).not.toBe(roundedReps);
+      }
+    });
+
+    test('uses custom increment value', async ({ page }) => {
+      await page.locator('#equipment').selectOption('custom');
+      await page.locator('#customWeight').fill('0');
+      await page.locator('#weightIncrement').fill('2.5');
+
+      await page.locator('#refWeight').fill('100');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#targetReps').fill('5');
+
+      const roundedWeight = await page.locator('#roundedWeight').textContent();
+      // Rounded weight should be a multiple of 2.5
+      expect((parseFloat(roundedWeight) * 10) % 25).toBe(0);
+    });
+
+    test('rounds reps to integer in rounded output', async ({ page }) => {
+      await page.locator('#refWeight').fill('100');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#targetReps').fill('5');
+
+      const roundedReps = await page.locator('#roundedReps').textContent();
+      // Rounded reps should be an integer
+      expect(parseFloat(roundedReps) % 1).toBe(0);
+    });
+
+    test('adjusts RPE in rounded output to account for rounding', async ({ page }) => {
+      await page.locator('#refWeight').fill('100');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#targetReps').fill('5');
+      await page.locator('#targetRPE').fill('8');
+
+      const exactRPE = await page.locator('#outputRPE').textContent();
+      const roundedRPE = await page.locator('#roundedRPE').textContent();
+
+      // Exact RPE should match target
+      expect(exactRPE).toBe('8');
+      // Rounded RPE may differ due to rounding adjustments
+      expect(parseFloat(roundedRPE)).toBeGreaterThan(0);
+      expect(parseFloat(roundedRPE)).toBeLessThanOrEqual(10);
+    });
+
+    test('displays rounding direction toggle', async ({ page }) => {
+      await expect(page.locator('#roundingToggle')).toBeVisible();
+      await expect(page.locator('#roundDown')).toBeVisible();
+      await expect(page.locator('#roundClosest')).toBeVisible();
+      await expect(page.locator('#roundUp')).toBeVisible();
+    });
+
+    test('defaults to closest rounding mode', async ({ page }) => {
+      await expect(page.locator('#roundClosest')).toHaveClass(/active/);
+      await expect(page.locator('#roundingToggle')).toHaveClass(/mode-closest/);
+    });
+
+    test('switches to round down mode', async ({ page }) => {
+      await page.locator('#roundDown').click();
+
+      await expect(page.locator('#roundDown')).toHaveClass(/active/);
+      await expect(page.locator('#roundClosest')).not.toHaveClass(/active/);
+      await expect(page.locator('#roundingToggle')).toHaveClass(/mode-down/);
+    });
+
+    test('switches to round up mode', async ({ page }) => {
+      await page.locator('#roundUp').click();
+
+      await expect(page.locator('#roundUp')).toHaveClass(/active/);
+      await expect(page.locator('#roundClosest')).not.toHaveClass(/active/);
+      await expect(page.locator('#roundingToggle')).toHaveClass(/mode-up/);
+    });
+
+    test('round down produces lower or equal weight', async ({ page }) => {
+      await page.locator('#refWeight').fill('100');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#targetReps').fill('5');
+
+      const exactWeight = parseFloat(await page.locator('#outputWeight').textContent());
+
+      await page.locator('#roundDown').click();
+      const roundedWeight = parseFloat(await page.locator('#roundedWeight').textContent());
+
+      expect(roundedWeight).toBeLessThanOrEqual(exactWeight);
+    });
+
+    test('round up produces higher or equal weight', async ({ page }) => {
+      await page.locator('#refWeight').fill('100');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#targetReps').fill('5');
+
+      const exactWeight = parseFloat(await page.locator('#outputWeight').textContent());
+
+      await page.locator('#roundUp').click();
+      const roundedWeight = parseFloat(await page.locator('#roundedWeight').textContent());
+
+      expect(roundedWeight).toBeGreaterThanOrEqual(exactWeight);
     });
   });
 
