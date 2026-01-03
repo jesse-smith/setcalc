@@ -649,7 +649,16 @@ h1 {
           const rpeDiffDown = Math.abs(rpeDown - targetRPE);
           const rpeDiffUp = Math.abs(rpeUp - targetRPE);
 
-          roundedWeight = rpeDiffDown <= rpeDiffUp ? weightDown : weightUp;
+          if (rpeDiffDown < rpeDiffUp) {
+            roundedWeight = weightDown;
+          } else if (rpeDiffUp < rpeDiffDown) {
+            roundedWeight = weightUp;
+          } else {
+            // RPE also equal - use weight closest to exact
+            const weightDiffDown = Math.abs(weightDown - displayWeight);
+            const weightDiffUp = Math.abs(weightUp - displayWeight);
+            roundedWeight = weightDiffDown <= weightDiffUp ? weightDown : weightUp;
+          }
         }
       }
 
