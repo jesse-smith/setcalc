@@ -401,6 +401,60 @@ test.describe('SetCalc UI Tests', () => {
       expect(parseFloat(roundedRPE)).toBeGreaterThan(0);
       expect(parseFloat(roundedRPE)).toBeLessThanOrEqual(10);
     });
+
+    test('displays rounding direction toggle', async ({ page }) => {
+      await expect(page.locator('#roundingToggle')).toBeVisible();
+      await expect(page.locator('#roundDown')).toBeVisible();
+      await expect(page.locator('#roundClosest')).toBeVisible();
+      await expect(page.locator('#roundUp')).toBeVisible();
+    });
+
+    test('defaults to closest rounding mode', async ({ page }) => {
+      await expect(page.locator('#roundClosest')).toHaveClass(/active/);
+      await expect(page.locator('#roundingToggle')).toHaveClass(/mode-closest/);
+    });
+
+    test('switches to round down mode', async ({ page }) => {
+      await page.locator('#roundDown').click();
+
+      await expect(page.locator('#roundDown')).toHaveClass(/active/);
+      await expect(page.locator('#roundClosest')).not.toHaveClass(/active/);
+      await expect(page.locator('#roundingToggle')).toHaveClass(/mode-down/);
+    });
+
+    test('switches to round up mode', async ({ page }) => {
+      await page.locator('#roundUp').click();
+
+      await expect(page.locator('#roundUp')).toHaveClass(/active/);
+      await expect(page.locator('#roundClosest')).not.toHaveClass(/active/);
+      await expect(page.locator('#roundingToggle')).toHaveClass(/mode-up/);
+    });
+
+    test('round down produces lower or equal weight', async ({ page }) => {
+      await page.locator('#refWeight').fill('100');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#targetReps').fill('5');
+
+      const exactWeight = parseFloat(await page.locator('#outputWeight').textContent());
+
+      await page.locator('#roundDown').click();
+      const roundedWeight = parseFloat(await page.locator('#roundedWeight').textContent());
+
+      expect(roundedWeight).toBeLessThanOrEqual(exactWeight);
+    });
+
+    test('round up produces higher or equal weight', async ({ page }) => {
+      await page.locator('#refWeight').fill('100');
+      await page.locator('#refReps').fill('10');
+      await page.locator('#targetReps').fill('5');
+
+      const exactWeight = parseFloat(await page.locator('#outputWeight').textContent());
+
+      await page.locator('#roundUp').click();
+      const roundedWeight = parseFloat(await page.locator('#roundedWeight').textContent());
+
+      expect(roundedWeight).toBeGreaterThanOrEqual(exactWeight);
+    });
   });
 
   test.describe('Edge Cases', () => {

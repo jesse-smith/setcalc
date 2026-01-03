@@ -68,6 +68,28 @@ export function roundToIncrement(weight, increment) {
 }
 
 /**
+ * Round a weight DOWN to the nearest increment
+ * @param {number} weight - The weight to round
+ * @param {number} increment - The increment to round to
+ * @returns {number} The rounded weight
+ */
+export function roundToIncrementDown(weight, increment) {
+  if (increment <= 0) return weight;
+  return Math.floor(weight / increment) * increment;
+}
+
+/**
+ * Round a weight UP to the nearest increment
+ * @param {number} weight - The weight to round
+ * @param {number} increment - The increment to round to
+ * @returns {number} The rounded weight
+ */
+export function roundToIncrementUp(weight, increment) {
+  if (increment <= 0) return weight;
+  return Math.ceil(weight / increment) * increment;
+}
+
+/**
  * Round a weight to the nearest enumerated value
  * @param {number} weight - The weight to round
  * @param {number[]} weights - Array of available weights (must be sorted ascending)
@@ -91,6 +113,45 @@ export function roundToEnumerated(weight, weights) {
 }
 
 /**
+ * Round a weight DOWN to the nearest enumerated value
+ * @param {number} weight - The weight to round
+ * @param {number[]} weights - Array of available weights (must be sorted ascending)
+ * @returns {number} The nearest available weight <= target, or minimum if none
+ */
+export function roundToEnumeratedDown(weight, weights) {
+  if (!weights || weights.length === 0) return weight;
+
+  // Find the largest weight that is <= target
+  let result = weights[0]; // Default to minimum
+  for (let i = 0; i < weights.length; i++) {
+    if (weights[i] <= weight) {
+      result = weights[i];
+    } else {
+      break;
+    }
+  }
+  return result;
+}
+
+/**
+ * Round a weight UP to the nearest enumerated value
+ * @param {number} weight - The weight to round
+ * @param {number[]} weights - Array of available weights (must be sorted ascending)
+ * @returns {number} The nearest available weight >= target, or maximum if none
+ */
+export function roundToEnumeratedUp(weight, weights) {
+  if (!weights || weights.length === 0) return weight;
+
+  // Find the smallest weight that is >= target
+  for (let i = 0; i < weights.length; i++) {
+    if (weights[i] >= weight) {
+      return weights[i];
+    }
+  }
+  return weights[weights.length - 1]; // Default to maximum
+}
+
+/**
  * Round a weight based on current equipment configuration
  * @param {number} weight - The weight to round
  * @returns {number} The rounded weight
@@ -104,6 +165,44 @@ export function roundWeight(weight) {
   const increment = getWeightIncrement();
   if (increment && increment > 0) {
     return roundToIncrement(weight, increment);
+  }
+
+  return weight;
+}
+
+/**
+ * Round a weight DOWN based on current equipment configuration
+ * @param {number} weight - The weight to round
+ * @returns {number} The rounded weight
+ */
+export function roundWeightDown(weight) {
+  const enumeratedWeights = getEnumeratedWeights();
+  if (enumeratedWeights) {
+    return roundToEnumeratedDown(weight, enumeratedWeights);
+  }
+
+  const increment = getWeightIncrement();
+  if (increment && increment > 0) {
+    return roundToIncrementDown(weight, increment);
+  }
+
+  return weight;
+}
+
+/**
+ * Round a weight UP based on current equipment configuration
+ * @param {number} weight - The weight to round
+ * @returns {number} The rounded weight
+ */
+export function roundWeightUp(weight) {
+  const enumeratedWeights = getEnumeratedWeights();
+  if (enumeratedWeights) {
+    return roundToEnumeratedUp(weight, enumeratedWeights);
+  }
+
+  const increment = getWeightIncrement();
+  if (increment && increment > 0) {
+    return roundToIncrementUp(weight, increment);
   }
 
   return weight;

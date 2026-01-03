@@ -6,8 +6,14 @@ import {
   hasEnumeratedWeights,
   getEnumeratedWeights,
   roundToIncrement,
+  roundToIncrementDown,
+  roundToIncrementUp,
   roundToEnumerated,
+  roundToEnumeratedDown,
+  roundToEnumeratedUp,
   roundWeight,
+  roundWeightDown,
+  roundWeightUp,
   EQUIPMENT_CONFIG
 } from '../src/utils.js';
 
@@ -229,6 +235,46 @@ describe('roundToIncrement', () => {
   });
 });
 
+describe('roundToIncrementDown', () => {
+  test('rounds down to nearest increment', () => {
+    expect(roundToIncrementDown(113, 5)).toBe(110);
+    expect(roundToIncrementDown(117, 5)).toBe(115);
+  });
+
+  test('returns exact value if already on increment', () => {
+    expect(roundToIncrementDown(115, 5)).toBe(115);
+  });
+
+  test('handles fractional increments', () => {
+    expect(roundToIncrementDown(11.3, 2.5)).toBe(10);
+  });
+
+  test('returns weight unchanged for zero or negative increment', () => {
+    expect(roundToIncrementDown(112, 0)).toBe(112);
+    expect(roundToIncrementDown(112, -5)).toBe(112);
+  });
+});
+
+describe('roundToIncrementUp', () => {
+  test('rounds up to nearest increment', () => {
+    expect(roundToIncrementUp(111, 5)).toBe(115);
+    expect(roundToIncrementUp(113, 5)).toBe(115);
+  });
+
+  test('returns exact value if already on increment', () => {
+    expect(roundToIncrementUp(115, 5)).toBe(115);
+  });
+
+  test('handles fractional increments', () => {
+    expect(roundToIncrementUp(10.1, 2.5)).toBe(12.5);
+  });
+
+  test('returns weight unchanged for zero or negative increment', () => {
+    expect(roundToIncrementUp(112, 0)).toBe(112);
+    expect(roundToIncrementUp(112, -5)).toBe(112);
+  });
+});
+
 describe('roundToEnumerated', () => {
   const weights = [3, 5, 8, 10, 12, 15, 17.5, 20];
 
@@ -262,6 +308,48 @@ describe('roundToEnumerated', () => {
 
   test('returns weight unchanged for null array', () => {
     expect(roundToEnumerated(10, null)).toBe(10);
+  });
+});
+
+describe('roundToEnumeratedDown', () => {
+  const weights = [3, 5, 8, 10, 12, 15, 17.5, 20];
+
+  test('rounds down to nearest available weight', () => {
+    expect(roundToEnumeratedDown(11, weights)).toBe(10);
+    expect(roundToEnumeratedDown(14, weights)).toBe(12);
+  });
+
+  test('returns exact match', () => {
+    expect(roundToEnumeratedDown(10, weights)).toBe(10);
+  });
+
+  test('returns minimum when below all weights', () => {
+    expect(roundToEnumeratedDown(1, weights)).toBe(3);
+  });
+
+  test('returns weight unchanged for empty array', () => {
+    expect(roundToEnumeratedDown(10, [])).toBe(10);
+  });
+});
+
+describe('roundToEnumeratedUp', () => {
+  const weights = [3, 5, 8, 10, 12, 15, 17.5, 20];
+
+  test('rounds up to nearest available weight', () => {
+    expect(roundToEnumeratedUp(9, weights)).toBe(10);
+    expect(roundToEnumeratedUp(11, weights)).toBe(12);
+  });
+
+  test('returns exact match', () => {
+    expect(roundToEnumeratedUp(10, weights)).toBe(10);
+  });
+
+  test('returns maximum when above all weights', () => {
+    expect(roundToEnumeratedUp(25, weights)).toBe(20);
+  });
+
+  test('returns weight unchanged for empty array', () => {
+    expect(roundToEnumeratedUp(10, [])).toBe(10);
   });
 });
 
@@ -308,6 +396,98 @@ describe('roundWeight', () => {
     document.body.appendChild(input);
 
     expect(roundWeight(113)).toBe(113);
+  });
+});
+
+describe('roundWeightDown', () => {
+  beforeEach(cleanup);
+
+  test('rounds down using increment for standard equipment', () => {
+    const select = document.createElement('select');
+    select.id = 'equipment';
+    select.innerHTML = '<option value="25" selected>Smith Machine</option>';
+    document.body.appendChild(select);
+
+    const input = document.createElement('input');
+    input.id = 'weightIncrement';
+    input.value = '5';
+    document.body.appendChild(input);
+
+    expect(roundWeightDown(117)).toBe(115);
+  });
+
+  test('rounds down using enumerated weights for dumbbells', () => {
+    const select = document.createElement('select');
+    select.id = 'equipment';
+    select.innerHTML = '<option value="dumbbells" selected>Dumbbells</option>';
+    document.body.appendChild(select);
+
+    const input = document.createElement('input');
+    input.id = 'weightIncrement';
+    input.value = '';
+    document.body.appendChild(input);
+
+    expect(roundWeightDown(11)).toBe(10);
+  });
+
+  test('returns weight unchanged when no increment set', () => {
+    const select = document.createElement('select');
+    select.id = 'equipment';
+    select.innerHTML = '<option value="custom" selected>Custom</option>';
+    document.body.appendChild(select);
+
+    const input = document.createElement('input');
+    input.id = 'weightIncrement';
+    input.value = '';
+    document.body.appendChild(input);
+
+    expect(roundWeightDown(113)).toBe(113);
+  });
+});
+
+describe('roundWeightUp', () => {
+  beforeEach(cleanup);
+
+  test('rounds up using increment for standard equipment', () => {
+    const select = document.createElement('select');
+    select.id = 'equipment';
+    select.innerHTML = '<option value="25" selected>Smith Machine</option>';
+    document.body.appendChild(select);
+
+    const input = document.createElement('input');
+    input.id = 'weightIncrement';
+    input.value = '5';
+    document.body.appendChild(input);
+
+    expect(roundWeightUp(111)).toBe(115);
+  });
+
+  test('rounds up using enumerated weights for dumbbells', () => {
+    const select = document.createElement('select');
+    select.id = 'equipment';
+    select.innerHTML = '<option value="dumbbells" selected>Dumbbells</option>';
+    document.body.appendChild(select);
+
+    const input = document.createElement('input');
+    input.id = 'weightIncrement';
+    input.value = '';
+    document.body.appendChild(input);
+
+    expect(roundWeightUp(9)).toBe(10);
+  });
+
+  test('returns weight unchanged when no increment set', () => {
+    const select = document.createElement('select');
+    select.id = 'equipment';
+    select.innerHTML = '<option value="custom" selected>Custom</option>';
+    document.body.appendChild(select);
+
+    const input = document.createElement('input');
+    input.id = 'weightIncrement';
+    input.value = '';
+    document.body.appendChild(input);
+
+    expect(roundWeightUp(113)).toBe(113);
   });
 });
 

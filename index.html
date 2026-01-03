@@ -247,6 +247,66 @@ h1 {
   border-bottom: none;
 }
 
+.rounding-toggle {
+  display: flex;
+  background: rgba(255,255,255,0.15);
+  border-radius: 16px;
+  padding: 2px;
+  margin-top: 12px;
+  position: relative;
+}
+
+.rounding-toggle::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(33.333% - 1.333px);
+  height: calc(100% - 4px);
+  background: rgba(255,255,255,0.25);
+  border-radius: 14px;
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  z-index: 0;
+}
+
+.rounding-toggle.mode-closest::before {
+  transform: translateX(100%);
+}
+
+.rounding-toggle.mode-up::before {
+  transform: translateX(200%);
+}
+
+.rounding-toggle-btn {
+  flex: 1;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 14px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 0.2s;
+  color: rgba(255,255,255,0.6);
+  position: relative;
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+.rounding-toggle-btn:active {
+  background: transparent;
+}
+
+.rounding-toggle-btn:focus {
+  outline: none;
+}
+
+.rounding-toggle-btn.active {
+  color: white;
+}
+
 .output-row span:nth-child(1) {
   flex: 0 0 33.33%; /* or any fixed width */
   text-align: left;
@@ -312,6 +372,11 @@ h1 {
       <span class="output-value" id="roundedRPE">--</span>
       <span class="output-label">RPE</span>
       </span>
+    </div>
+    <div class="rounding-toggle mode-closest" id="roundingToggle">
+      <button class="rounding-toggle-btn" id="roundDown" onclick="setRoundingMode('down')">Down</button>
+      <button class="rounding-toggle-btn active" id="roundClosest" onclick="setRoundingMode('closest')">Closest</button>
+      <button class="rounding-toggle-btn" id="roundUp" onclick="setRoundingMode('up')">Up</button>
     </div>
   </div>
   
@@ -389,9 +454,22 @@ h1 {
   <script type="module">
     import { getPct, getRepsFromPct } from './src/calc.js';
     import { validateReps, validateWeight, validateRPE, validateIncrement, clearValidation } from './src/validation.js';
-    import { getBaseWeight, clearOutputs, roundWeight, hasEnumeratedWeights, EQUIPMENT_CONFIG } from './src/utils.js';
+    import { getBaseWeight, clearOutputs, roundWeight, roundWeightDown, roundWeightUp, hasEnumeratedWeights, EQUIPMENT_CONFIG } from './src/utils.js';
 
     let mode = 'weight'; // 'weight' = calculate weight (user inputs reps), 'reps' = calculate reps (user inputs weight)
+    let roundingMode = 'closest'; // 'down', 'closest', 'up'
+
+    // Handle rounding mode selection
+    window.setRoundingMode = function(newMode) {
+      roundingMode = newMode;
+      const toggle = document.getElementById('roundingToggle');
+      toggle.classList.remove('mode-down', 'mode-closest', 'mode-up');
+      toggle.classList.add('mode-' + newMode);
+      document.getElementById('roundDown').classList.toggle('active', newMode === 'down');
+      document.getElementById('roundClosest').classList.toggle('active', newMode === 'closest');
+      document.getElementById('roundUp').classList.toggle('active', newMode === 'up');
+      calculate();
+    }
 
     // Handle equipment selection change
     function onEquipmentChange() {
@@ -524,8 +602,33 @@ h1 {
       document.getElementById('outputWeight').textContent = Math.round(outputWeight * 10) / 10;
       document.getElementById('outputRPE').textContent = targetRPE;
 
-      // Calculate rounded weight, rounded reps, and adjusted RPE
-      const roundedWeight = roundWeight(outputWeight);
+      // Calculate rounded weight based on rounding mode
+      let roundedWeight;
+
+      if (roundingMode === 'down') {
+        roundedWeight = roundWeightDown(outputWeight);
+      } else if (roundingMode === 'up') {
+        roundedWeight = roundWeightUp(outputWeight);
+      } else {
+        // 'closest' mode: choose the direction that gives reps closest to exact
+        const weightDown = roundWeightDown(outputWeight);
+        const weightUp = roundWeightUp(outputWeight);
+
+        // Calculate integer reps for each rounded weight
+        const totalDown = weightDown + baseWeight;
+        const pctDown = e1RM * 100 / totalDown;
+        const repsDown = Math.round(getRepsFromPct(pctDown, targetRPE));
+
+        const totalUp = weightUp + baseWeight;
+        const pctUp = e1RM * 100 / totalUp;
+        const repsUp = Math.round(getRepsFromPct(pctUp, targetRPE));
+
+        // Choose the weight that gives reps closest to outputReps
+        const diffDown = Math.abs(repsDown - outputReps);
+        const diffUp = Math.abs(repsUp - outputReps);
+
+        roundedWeight = diffDown <= diffUp ? weightDown : weightUp;
+      }
 
       // Calculate exact reps at rounded weight (using target RPE)
       const totalRoundedWeight = roundedWeight + baseWeight;
