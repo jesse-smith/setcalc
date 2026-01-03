@@ -240,13 +240,14 @@ h1 {
 .output-label-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   margin-top: 12px;
   margin-bottom: 4px;
 }
 
 .output-label-row .output-row-label {
   margin: 0;
+  flex-shrink: 0;
 }
 
 .output-row {
@@ -261,6 +262,8 @@ h1 {
 
 .rounding-toggle {
   display: flex;
+  flex: 1;
+  max-width: 180px;
   background: rgba(255,255,255,0.15);
   border-radius: 12px;
   padding: 2px;
@@ -272,7 +275,7 @@ h1 {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: calc(33.333% - 1.333px);
+  width: calc((100% - 4px) / 3);
   height: calc(100% - 4px);
   background: rgba(255,255,255,0.25);
   border-radius: 10px;
@@ -290,7 +293,7 @@ h1 {
 
 .rounding-toggle-btn {
   flex: 1;
-  padding: 3px 10px;
+  padding: 3px 0;
   border: none;
   background: transparent;
   border-radius: 10px;
@@ -300,6 +303,7 @@ h1 {
   color: rgba(255,255,255,0.6);
   position: relative;
   z-index: 1;
+  text-align: center;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
   -moz-user-select: none;
