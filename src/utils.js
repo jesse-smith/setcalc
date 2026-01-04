@@ -12,7 +12,9 @@ export const EQUIPMENT_CONFIG = {
   '0': { baseWeight: 0, increment: 0.5 },         // None (smallest common plate)
   '25': { baseWeight: 25, increment: 5 },         // Smith Machine
   '167': { baseWeight: 167, increment: 5 },       // 45° Leg Press
-  'dumbbells': { baseWeight: 0, weights: [3, 5, 8, 10, 12, 15, 17.5, 20] },  // Dumbbells (x1)
+  'dumbbells': { baseWeight: 0, weights: [3, 5, 8, 10, 12, 15, 17.5, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70] },  // Dumbbells (x1)
+  'dumbbells_x2': { baseWeight: 0, weights: [6, 10, 16, 20, 24, 30, 35, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140] },  // Dumbbells (x2)
+  'cable_purple': { baseWeight: 0, increment: 2.5 },  // Adjustable Cable (Purple)
   'custom': { baseWeight: 0, increment: 5 }       // Custom (default increment)
 };
 
