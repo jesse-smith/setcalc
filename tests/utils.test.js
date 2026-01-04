@@ -198,7 +198,7 @@ describe('getEnumeratedWeights', () => {
     select.innerHTML = '<option value="dumbbells" selected>Dumbbells</option>';
     document.body.appendChild(select);
 
-    expect(getEnumeratedWeights()).toEqual([3, 5, 8, 10, 12, 15, 17.5, 20]);
+    expect(getEnumeratedWeights()).toEqual([3, 5, 8, 10, 12, 15, 17.5, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]);
   });
 
   test('returns null for standard equipment', () => {
@@ -497,6 +497,8 @@ describe('EQUIPMENT_CONFIG', () => {
     expect(EQUIPMENT_CONFIG).toHaveProperty('25');
     expect(EQUIPMENT_CONFIG).toHaveProperty('167');
     expect(EQUIPMENT_CONFIG).toHaveProperty('dumbbells');
+    expect(EQUIPMENT_CONFIG).toHaveProperty('dumbbells_x2');
+    expect(EQUIPMENT_CONFIG).toHaveProperty('cable_purple');
     expect(EQUIPMENT_CONFIG).toHaveProperty('custom');
   });
 
@@ -507,7 +509,21 @@ describe('EQUIPMENT_CONFIG', () => {
   test('has correct structure for enumerated equipment', () => {
     expect(EQUIPMENT_CONFIG['dumbbells']).toEqual({
       baseWeight: 0,
-      weights: [3, 5, 8, 10, 12, 15, 17.5, 20]
+      weights: [3, 5, 8, 10, 12, 15, 17.5, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
+    });
+  });
+
+  test('dumbbells_x2 has doubled weights', () => {
+    expect(EQUIPMENT_CONFIG['dumbbells_x2']).toEqual({
+      baseWeight: 0,
+      weights: [6, 10, 16, 20, 24, 30, 35, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140]
+    });
+  });
+
+  test('cable_purple has correct increment', () => {
+    expect(EQUIPMENT_CONFIG['cable_purple']).toEqual({
+      baseWeight: 0,
+      increment: 2.5
     });
   });
 });
